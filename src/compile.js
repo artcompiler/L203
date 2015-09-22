@@ -531,7 +531,6 @@ let translate = (function() {
   			val: ret
   		};
   		set(node, options, function (err1, val1) {
-  			console.log(val1.color);
   			resume([].concat(err1).concat(err2), val1);
   		}, params);
   	});

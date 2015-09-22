@@ -26,6 +26,8 @@ window.exports.viewer = (function () {
     var svgd = d3.select(el)
     svgd.selectAll("path")
       .remove();//clear each time
+    svgd.selectAll("g")
+      .remove();
     function styles(selection, these){
       these.forEach(function (p){
         selection
@@ -49,7 +51,8 @@ window.exports.viewer = (function () {
     var graticule = d3.geo.graticule();
     svgd
       .attr("width", graphs.width)
-      .attr("height", graphs.height);
+      .attr("height", graphs.height)
+      .style("background-color", "rgb("+graphs.bgcolor.r+","+graphs.bgcolor.g+","+graphs.bgcolor.b+")");
     svgd.append("path")
       .datum(graticule)
       .attr("class", "graticule")
@@ -76,7 +79,6 @@ window.exports.viewer = (function () {
       .style("fill-opacity", 0)
       .style("stroke", "rgba("+graphs.bcolor.r+","+graphs.bcolor.g+","+graphs.bcolor.b+","+graphs.bcolor.a+")")
       .style("stroke-width", 0.5+"px");
-    svgd.style('background-color', "rgba("+graphs.bgcolor.r+","+graphs.bgcolor.g+","+graphs.bgcolor.b+")");
   }
   function capture(el) {
     var mySVG = $(el).html();
