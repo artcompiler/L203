@@ -40,6 +40,7 @@ window.exports.viewer = (function () {
     switch(graphs.projection){
       case "albers":
         projection = d3.geo.albers()
+          
         break;
     }
     projection
@@ -71,7 +72,7 @@ window.exports.viewer = (function () {
         if(isNaN(tt.a)){tt.a = graphs.opacity;}
         return "rgba("+tt.r+","+tt.g+","+tt.b+","+tt.a+")";
       });
-
+      
     svgd.insert("path", ".graticule")
       .datum(graphs.mesh)
       .attr("class", "boundary")
