@@ -465,11 +465,49 @@ let translate = (function() {
   				err2 = err2.concat(error("Argument latitude is not a number.", node.elts[1]));
   			}
   			visit(node.elts[2], options, function (err3, val3) {//projection
-  				if(typeof val3 === 'string'){
-  					ret.projection = "albers";
-  				} else {
-  					err3 = err3.concat(error("Argument projection is not a valid type.", node.elts[2]));
-  				}
+  				switch(val3){
+  					case "albers":
+  						break;
+			      case "azimuthal equal area":
+			      	ret.height = 960;
+			      	ret.scale = 237;
+			        break;
+			      case "azimuthal equidistant":
+			      	ret.height = 960;
+			      	ret.scale = 150;
+			        break;
+			      case "conic conformal":
+			        break;
+			      case "conic equal area":
+			        break;
+			      case "conic equidistant":
+			      	ret.scale = 128;
+			        break;
+			      case "equirectangular":
+			      	ret.height = 480;
+			        break;
+			      case "gnomonic":
+			      	ret.height = 960;
+			      	ret.scale = 150;
+			        break;
+			      case "mercator":
+			      	ret.height = 960;
+			        break;
+			      case "transverse mercator":
+			      	ret.height = 960;
+			        break;
+			      case "orthographic":
+			      	ret.height = 960;
+			      	ret.scale = 475;
+			        break;
+			      case "stereographic":
+			      	ret.height = 960;
+			      	ret.scale = 245;
+			        break;
+			      default:
+			      	err3 = err3.concat(error("Argument projection is not a valid type.", node.elts[2]));
+			    }
+  				ret.projection = val3;
   				http.get("http://bl.ocks.org/mbostock/raw/4090846/world-50m.json", function (res) {
 			      var pr = '';
 

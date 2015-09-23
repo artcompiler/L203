@@ -39,13 +39,52 @@ window.exports.viewer = (function () {
     var projection = null;
     switch(graphs.projection){
       case "albers":
-        projection = d3.geo.albers()
-          
+        projection = d3.geo.albers();
+        break;
+      case "azimuthal equal area":
+        projection = d3.geo.azimuthalEqualArea()
+          .clipAngle(180 - 1e-3);
+        break;
+      case "azimuthal equidistant":
+        projection = d3.geo.azimuthalEquidistant()
+          .clipAngle(180 - 1e-3);
+        break;
+      case "conic conformal":
+        projection = d3.geo.conicConformal();
+        break;
+      case "conic equal area":
+        projection = d3.geo.conicEqualArea();
+        break;
+      case "conic equidistant":
+        projection = d3.geo.conicEquidistant();
+        break;
+      case "equirectangular":
+        projection = d3.geo.equirectangular();
+        break;
+      case "gnomonic":
+        projection = d3.geo.gnomonic()
+          .clipAngle(90 - 1e-3);
+        break;
+      case "mercator":
+        projection = d3.geo.mercator();
+        break;
+      case "transverse mercator":
+        projection = d3.geo.transverseMercator();
+        break;
+      case "orthographic":
+        projection = d3.geo.orthographic()
+        .clipAngle(90);
+        break;
+      case "stereographic":
+        projection = d3.geo.stereographic()
+          .clipAngle(180 - 1e-4)
+          .clipExtent([[0, 0], [graphs.width, graphs.height]]);
         break;
     }
     projection
       .center([graphs.latitude, graphs.longitude])
-      .scale(graphs.scale);
+      .scale(graphs.scale)
+      .translate([graphs.width/2, graphs.height/2]);
     if(graphs.parallels){projection.parallels(graphs.parallels);}
     var path = d3.geo.path()
       .projection(projection);
@@ -72,7 +111,7 @@ window.exports.viewer = (function () {
         if(isNaN(tt.a)){tt.a = graphs.opacity;}
         return "rgba("+tt.r+","+tt.g+","+tt.b+","+tt.a+")";
       });
-      
+
     svgd.insert("path", ".graticule")
       .datum(graphs.mesh)
       .attr("class", "boundary")
