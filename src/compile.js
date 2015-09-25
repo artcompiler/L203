@@ -302,8 +302,8 @@ var colorbrewer = {YlGn: {
 11: ["#8dd3c7","#ffffb3","#bebada","#fb8072","#80b1d3","#fdb462","#b3de69","#fccde5","#d9d9d9","#bc80bd","#ccebc5"],
 12: ["#8dd3c7","#ffffb3","#bebada","#fb8072","#80b1d3","#fdb462","#b3de69","#fccde5","#d9d9d9","#bc80bd","#ccebc5","#ffed6f"]
 }};
-var topojson = require("topojson");
-var http = require('http');
+//var http = require('http');
+//var topojson = require('topojson');
 import {assert, message, messages, reserveCodeRange} from "./assert.js"
 
 reserveCodeRange(1000, 1999, "compile");
@@ -369,7 +369,7 @@ let translate = (function() {
   };
   function set(node, options, resume, params){
     visit(node.elts[0], options, function (err, val) {
-      if(typeof val !== "object" || !val || !val.mesh){
+      if(typeof val !== "object" || !val || !val.height){
         err = err.concat(error("Argument Map invalid.", node.elts[0]));
       } else {
         if(params.op && params.op === "default"){
@@ -508,23 +508,7 @@ let translate = (function() {
 			      	err3 = err3.concat(error("Argument projection is not a valid type.", node.elts[2]));
 			    }
   				ret.projection = val3;
-  				http.get("http://bl.ocks.org/mbostock/raw/4090846/world-50m.json", function (res) {
-			      var pr = '';
-
-			      res.on('data', function(d) {
-			        pr += d;
-			      });
-
-			      res.on('end', function() {
-			        pr = JSON.parse(pr);
-			        ret.mesh = topojson.mesh(pr, pr.objects.countries, function (a, b) { return a !== b;});
-			        ret.feature = topojson.feature(pr, pr.objects.land);
-			        resume([].concat(err1).concat(err2).concat(err3), ret);
-			      });
-			    }).on('error', function(e) {
-			    	err1 = err1.concat(error("Attempt to access map data returned " + e, 0));
-			    	resume([].concat(err1).concat(err2).concat(err3), ret);
-			    });
+  				resume([].concat(err1).concat(err2).concat(err3), ret);
   			});
   		});
   	});
@@ -802,13 +786,13 @@ export let compiler = (function () {
     // an object to be rendered on the client by the viewer for this language.
     try {
       translate(pool, function (err, val) {
-        //console.log("translate err=" + JSON.stringify(err, null, 2) + "\nval=" + JSON.stringify(val, null, 2));
+        console.log("translate err=" + JSON.stringify(err, null, 2) + "\nval=" + JSON.stringify(val, null, 2));
         if (err.length) {
         	console.log(err);
           resume(err, val);
         } else {
           render(val, function (err, val) {
-            //console.log("render err=" + JSON.stringify(err, null, 2) + "\nval=" + JSON.stringify(val, null, 2));
+            console.log("render err=" + JSON.stringify(err, null, 2) + "\nval=" + JSON.stringify(val, null, 2));
             resume(err, val);
           });
         }

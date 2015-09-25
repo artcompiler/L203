@@ -9,5 +9,6 @@ lib/%.js: src/%.js
 	babel --modules common $< -o $@
 
 run:
+	browserify src/viewer/viewer.js -t babelify -o pub/viewer.js
 	npm start
 
