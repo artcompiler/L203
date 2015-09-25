@@ -751,16 +751,6 @@ window.exports.viewer = (function () {
     var graticule = d3.geo.graticule();
     svgd.attr("width", graphs.width).attr("height", graphs.height).style("background-color", "rgb(" + graphs.bgcolor.r + "," + graphs.bgcolor.g + "," + graphs.bgcolor.b + ")");
     svgd.append("path").datum(graticule).attr("class", "graticule").attr("d", path).style("fill-opacity", 0).style("stroke", "#777").style("stroke-width", 0.5 + "px").style("stroke-opacity", 0.5);
-    //var world = null;
-    /*   http.get("/pub/world-50m.json", function (res) {
-          var pr = '';
-    
-          res.on('data', function(d) {
-            pr += d;
-          });
-        
-          res.on('end', function() {
-            world = JSON.parse(pr);*/
     d3.json("./data/world-50m.json", function (error, world) {
       if (error) console.log("Didn't work: " + error);
       svgd.insert("path", ".graticule").datum(topojson.feature(world, world.objects.land)).attr("class", "land").attr("d", path).style("fill", function (d, i) {
@@ -775,26 +765,6 @@ window.exports.viewer = (function () {
         return a !== b;
       })).attr("class", "boundary").attr("d", path).style("fill-opacity", 0).style("stroke", "rgba(" + graphs.bcolor.r + "," + graphs.bcolor.g + "," + graphs.bcolor.b + "," + graphs.bcolor.a + ")").style("stroke-width", 0.5 + "px");
     });
-    /*  });
-    }).on('error', function(e) {
-      console.log("Didn't work: " + e);
-    });*/
-    /*svgd.insert("path", ".graticule")
-      .datum(graphs.feature)
-      .attr("class", "land")
-      .attr("d", path)
-      .style("fill", function (d, i) {
-        var tt = color(i);
-        if(isNaN(tt.a)){tt.a = graphs.opacity;}
-        return "rgba("+tt.r+","+tt.g+","+tt.b+","+tt.a+")";
-      });
-     svgd.insert("path", ".graticule")
-      .datum(graphs.mesh)
-      .attr("class", "boundary")
-      .attr("d", path)
-      .style("fill-opacity", 0)
-      .style("stroke", "rgba("+graphs.bcolor.r+","+graphs.bcolor.g+","+graphs.bcolor.b+","+graphs.bcolor.a+")")
-      .style("stroke-width", 0.5+"px");*/
   }
   function capture(el) {
     var mySVG = $(el).html();

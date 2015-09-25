@@ -438,7 +438,7 @@ let translate = (function() {
   			};
   			set(node, options, function (err, val) {//map
   				resume([].concat(err).concat(err1).concat(err2), val);
-  			})
+  			}, params);
   		});
   	});
   }
