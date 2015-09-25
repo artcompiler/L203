@@ -753,13 +753,25 @@ window.exports.viewer = (function () {
     svgd.append("path").datum(graticule).attr("class", "graticule").attr("d", path).style("fill-opacity", 0).style("stroke", "#777").style("stroke-width", 0.5 + "px").style("stroke-opacity", 0.5);
     d3.json("./data/world-50m.json", function (error, world) {
       if (error) console.log("Didn't work: " + error);
-      svgd.insert("path", ".graticule").datum(topojson.feature(world, world.objects.land)).attr("class", "land").attr("d", path).style("fill", function (d, i) {
+      /*svgd.insert("path", ".graticule")
+        .datum(topojson.feature(world, world.objects.land))
+        .attr("class", "land")
+        .attr("d", path)
+        .style("fill", function (d, i) {
+          var tt = color(i);
+          if(isNaN(tt.a)){tt.a = graphs.opacity;}
+          return "rgba("+tt.r+","+tt.g+","+tt.b+","+tt.a+")";
+        })
+        .style("stroke", "rgba("+graphs.bcolor.r+","+graphs.bcolor.g+","+graphs.bcolor.b+","+graphs.bcolor.a+")")
+        .style("stroke-width", 0.5+"px");*/
+      var countries = topojson.feature(world, world.objects.countries);
+      svgd.append("g").attr("class", "land").selectAll("path").data(countries.features).enter().append("path").style("fill", function (d, i) {
         var tt = color(i);
         if (isNaN(tt.a)) {
           tt.a = graphs.opacity;
         }
         return "rgba(" + tt.r + "," + tt.g + "," + tt.b + "," + tt.a + ")";
-      });
+      }).style("stroke", "rgba(" + graphs.bcolor.r + "," + graphs.bcolor.g + "," + graphs.bcolor.b + "," + graphs.bcolor.a + ")").style("stroke-width", 0.5 + "px").attr("d", path);
 
       svgd.insert("path", ".graticule").datum(topojson.mesh(world, world.objects.countries, function (a, b) {
         return a !== b;
