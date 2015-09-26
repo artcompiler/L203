@@ -23,4 +23,5 @@ exports.globalLexicon = {
     "brewer" : { "tk": 0x01, "name": "BREWER", "cls": "function", "length": 1, "arity": 1},    
     "map" : { "tk": 0x01, "name": "MAP", "cls": "function", "length": 3, "arity": 3},
     "states" : { "tk": 0x01, "name": "STATES", "cls": "function", "length": 1, "arity": 1},
+    "limit" : { "tk": 0x01, "name": "LIMIT", "cls": "function", "length": 3, "arity": 3},
 }

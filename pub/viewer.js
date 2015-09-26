@@ -764,20 +764,21 @@ window.exports.viewer = (function () {
         //finds all the coordinate pairs in the mess of arrays.
         if (elt.length == 2 && !isNaN(elt[0]) && !isNaN(elt[1])) {
           //actual coordinates
-          if (elt[1] > 0) {
-            //longitude
-            return true;
-          }
+          return elt[0] >= graphs.limits[0][0] && elt[0] <= graphs.limits[0][1] && elt[1] >= graphs.limits[1][0] && elt[1] <= graphs.limits[1][1]; //compare to min and max for long and lat
         } else if (elt instanceof Array) {
-          //just a sanity check so we don't break things
-          return elt.some(coordcheck);
-        }
+            //just a sanity check so we don't break things
+            return elt.some(coordcheck);
+          }
       }
       svgd.append("g").attr("class", "land").selectAll("path").data(feat.features, function (d, i) {
-        if (!d.geometry.coordinates.some(coordcheck)) {
-          return i;
+        if (graphs.limits) {
+          if (d.geometry.coordinates.some(coordcheck)) {
+            return i;
+          } else {
+            return null;
+          }
         } else {
-          return null;
+          return i;
         }
       }).enter().append("path").style("fill", function (d, i) {
         var tt = color(i);

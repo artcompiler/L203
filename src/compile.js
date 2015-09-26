@@ -444,7 +444,39 @@ let translate = (function() {
   			let params = {
   				op: "default",
   				prop: "parallels",
-  				val: [val2, val1]
+  				val: [val1, val2]
+  			};
+  			set(node, options, function (err, val) {//map
+  				resume([].concat(err).concat(err1).concat(err2), val);
+  			}, params);
+  		});
+  	});
+  }
+  function limit(node, options, resume) {//[minlatitude, maxlatitude], [minlongitude, maxlongitude], map
+  	visit(node.elts[1], options, function (err1, val1) {//[minlongitude, maxlongitude]
+  		if(!(val1 instanceof Array) 
+  			|| +val1[0] < -180 
+  			|| +val1[0] > +val1[1]
+  			|| +val1[1] > 180
+  			|| +val1[1] < +val1[0]){
+  			err1 = err1.concat(error("Argument array for longitude invalid.", node.elts[1]))
+  		} else {
+  			val1 = [+val1[0], +val1[1]];//throw out any other potential values.
+  		}
+  		visit(node.elts[2], options, function (err2, val2) {//[minlatitude, maxlatitude]
+  		if(!(val2 instanceof Array) 
+  			|| +val2[0] < -180 
+  			|| +val2[0] > +val2[1]
+  			|| +val2[1] > 180
+  			|| +val2[1] < +val2[0]){
+	  			err2 = err2.concat(error("Argument array for latitude invalid.", node.elts[2]))
+	  		} else {
+	  			val2 = [+val2[0], +val2[1]];//throw out any other potential values.
+	  		}
+  			let params = {
+  				op: "default",
+  				prop: "limits",
+  				val: [val1, val2]
   			};
   			set(node, options, function (err, val) {//map
   				resume([].concat(err).concat(err1).concat(err2), val);
@@ -772,6 +804,7 @@ let translate = (function() {
     "RGBA" : rgba,
     "BREWER" : brewer,
     "STATES" : states,
+    "LIMIT" : limit,
   }
   return translate;
 })();
