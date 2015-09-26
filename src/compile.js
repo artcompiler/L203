@@ -418,6 +418,16 @@ let translate = (function() {
   		resume([].concat(err), val);
   	}, params);
   }
+  function states(node, options, resume) {
+  	let params = {
+  		op: "default",
+  		prop: "states",
+  		val: true
+  	};
+  	set(node, options, function (err, val) {
+  		resume([].concat(err), val);
+  	}, params);
+  }
   function parallels(node, options, resume) {//latitude, longitude, map
   	visit(node.elts[1], options, function (err1, val1) {//longitude
   		if(!isNaN(val1)){
@@ -761,6 +771,7 @@ let translate = (function() {
     "RGB" : rgb,
     "RGBA" : rgba,
     "BREWER" : brewer,
+    "STATES" : states,
   }
   return translate;
 })();

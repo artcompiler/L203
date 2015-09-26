@@ -21,5 +21,6 @@ exports.globalLexicon = {
     "rgb" : { "tk": 0x01, "name": "RGB", "cls": "function", "length": 3, "arity": 3},
     "rgba" : { "tk": 0x01, "name": "RGBA", "cls": "function", "length": 4, "arity": 4},
     "brewer" : { "tk": 0x01, "name": "BREWER", "cls": "function", "length": 1, "arity": 1},    
-    "map" : { "tk": 0x01, "name": "MAP", "cls": "function", "length": 3, "arity": 3},  
+    "map" : { "tk": 0x01, "name": "MAP", "cls": "function", "length": 3, "arity": 3},
+    "states" : { "tk": 0x01, "name": "STATES", "cls": "function", "length": 1, "arity": 1},
 }
