@@ -760,7 +760,26 @@ window.exports.viewer = (function () {
       //try this
       var dat = graphs.states ? world.objects.states : world.objects.countries;
       var feat = topojson.feature(world, dat);
-      svgd.append("g").attr("class", "land").selectAll("path").data(feat.features).enter().append("path").style("fill", function (d, i) {
+      function coordcheck(elt, index) {
+        //finds all the coordinate pairs in the mess of arrays.
+        if (elt.length == 2 && !isNaN(elt[0]) && !isNaN(elt[1])) {
+          //actual coordinates
+          if (elt[1] > 0) {
+            //longitude
+            return true;
+          }
+        } else if (elt instanceof Array) {
+          //just a sanity check so we don't break things
+          return elt.some(coordcheck);
+        }
+      }
+      svgd.append("g").attr("class", "land").selectAll("path").data(feat.features, function (d, i) {
+        if (!d.geometry.coordinates.some(coordcheck)) {
+          return i;
+        } else {
+          return null;
+        }
+      }).enter().append("path").style("fill", function (d, i) {
         var tt = color(i);
         if (isNaN(tt.a)) {
           tt.a = graphs.opacity;
@@ -769,10 +788,6 @@ window.exports.viewer = (function () {
       }).style("stroke", "rgba(" + graphs.bcolor.r + "," + graphs.bcolor.g + "," + graphs.bcolor.b + "," + graphs.bcolor.a + ")").style("stroke-width", 0.5 + "px").attr("d", path).on("click", function (d, i) {
         console.log(d.geometry.coordinates);
       });
-
-      svgd.insert("path", ".graticule").datum(topojson.mesh(world, dat, function (a, b) {
-        return a !== b;
-      })).attr("class", "boundary").attr("d", path).style("fill-opacity", 0).style("stroke", "rgba(" + graphs.bcolor.r + "," + graphs.bcolor.g + "," + graphs.bcolor.b + "," + graphs.bcolor.a + ")").style("stroke-width", 0.5 + "px");
     });
   }
   function capture(el) {
