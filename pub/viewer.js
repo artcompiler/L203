@@ -750,10 +750,18 @@ window.exports.viewer = (function () {
     var path = d3.geo.path().projection(projection);
     var graticule = d3.geo.graticule();
     svgd.attr("width", graphs.width).attr("height", graphs.height).style("background-color", "rgb(" + graphs.bgcolor.r + "," + graphs.bgcolor.g + "," + graphs.bgcolor.b + ")");
-    svgd.append("path").datum(graticule).attr("class", "graticule").attr("d", path).style("fill-opacity", 0).style("stroke", "#777").style("stroke-width", 0.5 + "px").style("stroke-opacity", 0.5);
+    svgd.append("g").append("path").datum(graticule).attr("class", "graticule").attr("d", path).style("fill-opacity", 0).style("stroke", "#777").style("stroke-width", 0.5 + "px").style("stroke-opacity", 0.5);
     var filepath = "./data/world-50m.json";
     if (graphs.states) {
       filepath = "./data/world.json";
+    }
+    if (graphs.zoom) {
+      var zoomed = function zoomed() {
+        svgd.selectAll("g").attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+      };
+
+      var zoom = d3.behavior.zoom().scaleExtent([0.5, 10]).on("zoom", zoomed);
+      svgd.call(zoom).call(zoom.event);
     }
     d3.json(filepath, function (error, world) {
       if (error) console.log("Didn't work: " + error);

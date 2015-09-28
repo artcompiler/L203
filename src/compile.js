@@ -555,6 +555,16 @@ let translate = (function() {
   		});
   	});
   }
+  function zoom(node, options, resume) {
+    let params = {
+      op: "default",
+      prop: "zoom",
+      val: true 
+    };
+    set(node, options, function (err, val) {
+      resume([].concat(err), val);
+    }, params);
+  };
   function colorcheck(val){
   	var ret = {};
   	if(typeof val === "string" && /^#[0-9A-F]{6}$/i.test(val)){//valid hex string.
@@ -805,6 +815,7 @@ let translate = (function() {
     "BREWER" : brewer,
     "STATES" : states,
     "LIMIT" : limit,
+    "ZOOM" : zoom,
   }
   return translate;
 })();
