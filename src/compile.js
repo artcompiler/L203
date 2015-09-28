@@ -555,15 +555,31 @@ let translate = (function() {
   		});
   	});
   }
-  function zoom(node, options, resume) {
-    let params = {
-      op: "default",
-      prop: "zoom",
-      val: true 
-    };
-    set(node, options, function (err, val) {
-      resume([].concat(err), val);
-    }, params);
+  function zoom(node, options, resume) {//0 = map, 1 = max, 2 = min --- zoom min max map
+  	visit(node.elts[1], options, function (err1, val1) {//max
+  		if(!isNaN(val1) && +val1 > 0){
+  			val1 = +val1;
+  		} else {
+  			err1 = err1.concat(error("Argument max is not a positive number.", node.elts[1]))
+  		}
+  		visit(node.elts[2], options, function (err2, val2) {//min
+  			if(!isNaN(val2) && +val2 > 0){
+  				val2 = +val2;
+  			} else if(val2 > val1){
+  				err2 = err2.concat(error("Argument min is larger than max.", node.elts[2]));
+  			} else {
+  				err2 = err2.concat(error("Argument min is not a positive number.", node.elts[2]));
+  			}
+  			let params = {
+  				op: "default",
+  				prop: "zoom",
+  				val: [val2, val1]
+  			};
+  			set(node, options, function (err, val) {//map
+  				resume([].concat(err).concat(err1).concat(err2), val);
+  			}, params);
+  		});
+  	});
   };
   function colorcheck(val){
   	var ret = {};

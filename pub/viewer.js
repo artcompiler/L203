@@ -760,7 +760,7 @@ window.exports.viewer = (function () {
         svgd.selectAll("g").attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
       };
 
-      var zoom = d3.behavior.zoom().scaleExtent([0.5, 10]).on("zoom", zoomed);
+      var zoom = d3.behavior.zoom().scaleExtent(graphs.zoom).on("zoom", zoomed);
       svgd.call(zoom).call(zoom.event);
     }
     d3.json(filepath, function (error, world) {
