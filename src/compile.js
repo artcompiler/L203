@@ -459,17 +459,17 @@ let translate = (function() {
   			|| +val1[0] > +val1[1]
   			|| +val1[1] > 180
   			|| +val1[1] < +val1[0]){
-  			err1 = err1.concat(error("Argument array for longitude invalid.", node.elts[1]))
+  			err1 = err1.concat(error("Argument array for longitude invalid.", node.elts[1]));
   		} else {
   			val1 = [+val1[0], +val1[1]];//throw out any other potential values.
   		}
   		visit(node.elts[2], options, function (err2, val2) {//[minlatitude, maxlatitude]
   		if(!(val2 instanceof Array) 
-  			|| +val2[0] < -180 
+  			|| +val2[0] < -90 
   			|| +val2[0] > +val2[1]
-  			|| +val2[1] > 180
+  			|| +val2[1] > 90
   			|| +val2[1] < +val2[0]){
-	  			err2 = err2.concat(error("Argument array for latitude invalid.", node.elts[2]))
+	  			err2 = err2.concat(error("Argument array for latitude invalid.", node.elts[2]));
 	  		} else {
 	  			val2 = [+val2[0], +val2[1]];//throw out any other potential values.
 	  		}
@@ -477,6 +477,53 @@ let translate = (function() {
   				op: "default",
   				prop: "limits",
   				val: [val1, val2]
+  			};
+  			set(node, options, function (err, val) {//map
+  				resume([].concat(err).concat(err1).concat(err2), val);
+  			}, params);
+  		});
+  	});
+  }
+  function point(node, options, resume) {//[latitudes], [longitudes], map
+  	visit(node.elts[1], options, function (err1, val1) {//[longitudes]
+  		var ret1 = [];
+  		if(val1 instanceof Array){
+  			val1.forEach(function (element, index) {
+  				if(!isNaN(element) && Math.abs(element) <= 180){
+  				} else {
+  					err1 = err1.concat(error("Argument for longitude at index "+index+" invalid.", node.elts[1]));
+  				}
+  				ret1 = ret1.concat(+element);
+  			});
+  		} else if(!isNaN(val1) && Math.abs(val1) <= 180){
+  			ret1 = ret1.concat(+val1);
+  		} else {
+  			err1 = err1.concat(error("Argument array for longitude invalid.", node.elts[1]));
+  		}
+  		visit(node.elts[2], options, function (err2, val2) {//[latitudes]
+	  		var ret2 = [];
+	  		if(val2 instanceof Array){
+	  			val2.forEach(function (element, index) {
+	  				if(!isNaN(element) && Math.abs(element) <= 90){
+	  				} else {
+	  					err2 = err2.concat(error("Argument for latitude at index "+index+" invalid.", node.elts[2]));
+	  				}
+	  				ret2 = ret2.concat(+element);
+	  			});
+	  		} else if(!isNaN(val2) && Math.abs(val2) <= 90){
+	  			ret2 = ret2.concat(+val2);
+	  		} else {
+	  			err2 = err2.concat(error("Argument array for latitude invalid.", node.elts[2]));
+	  		}//if these two aren't equal it won't exactly work.
+	  		if(ret1.length > ret2.length){
+	  			err2 = err2.concat(error("Argument array for latitude missing parameters.", node.elts[2]));
+	  		} else if(ret1.length < ret2.length){
+	  			err1 = err1.concat(error("Argument array for longitude missing parameters.", node.elts[1]));
+	  		}
+  			let params = {
+  				op: "default",
+  				prop: "points",
+  				val: [ret1, ret2]
   			};
   			set(node, options, function (err, val) {//map
   				resume([].concat(err).concat(err1).concat(err2), val);
@@ -832,6 +879,7 @@ let translate = (function() {
     "STATES" : states,
     "LIMIT" : limit,
     "ZOOM" : zoom,
+    "POINT" : point,
   }
   return translate;
 })();

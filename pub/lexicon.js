@@ -25,4 +25,5 @@ exports.globalLexicon = {
     "states" : { "tk": 0x01, "name": "STATES", "cls": "function", "length": 1, "arity": 1},
     "limit" : { "tk": 0x01, "name": "LIMIT", "cls": "function", "length": 3, "arity": 3},
     "zoom" : { "tk": 0x01, "name": "ZOOM", "cls": "function", "length": 3, "arity": 3},
+    "point" : { "tk": 0x01, "name": "POINT", "cls": "function", "length": 3, "arity": 3},
 }
