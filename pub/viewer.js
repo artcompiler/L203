@@ -759,12 +759,16 @@ window.exports.viewer = (function () {
     if (graphs.zoom) {
       var zoomed = function zoomed() {
         g.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
-        svgd.selectAll("circle").attr("r", 4.5 / d3.event.scale).style("stroke-width", 2 / d3.event.scale + "px");
+        svgd.selectAll("circle").attr("r", function (d) {
+          return d.size / d3.event.scale;
+        }).style("stroke-width", 2 / d3.event.scale + "px");
       };
 
       var zoom = d3.behavior.zoom().scaleExtent(graphs.zoom).on("zoom", zoomed);
       svgd.call(zoom).call(zoom.event);
     }
+    var cur = null;
+    var prev = null;
     d3.json(filepath, function (error, world) {
       if (error) console.log("Didn't work: " + error);
       //try this
@@ -796,11 +800,22 @@ window.exports.viewer = (function () {
           tt.a = graphs.opacity;
         }
         return "rgba(" + tt.r + "," + tt.g + "," + tt.b + "," + tt.a + ")";
-      }).style("stroke", "rgba(" + graphs.bcolor.r + "," + graphs.bcolor.g + "," + graphs.bcolor.b + "," + graphs.bcolor.a + ")").style("stroke-width", 0.5 + "px").attr("d", path);
+      }).style("stroke", "rgba(" + graphs.bcolor.r + "," + graphs.bcolor.g + "," + graphs.bcolor.b + "," + graphs.bcolor.a + ")").style("stroke-width", 0.5 + "px").attr("d", path).on("click", function (d, i) {
+        if (cur) {
+          cur.style.fill = prev;
+        }
+        prev = this.style.fill;
+        this.style.fill = "red";
+        cur = this;
+      });
       if (graphs.points) {
-        g.append("g").attr("class", "points").selectAll("g").data(graphs.points[0]).enter().append("circle").attr("transform", function (d, i) {
-          return "translate(" + projection([graphs.points[0][i], graphs.points[1][i]]) + ")";
-        }).attr("r", 4.5).style("fill", "#fff").style("stroke", "red").style("stroke-width", "2px");
+        g.append("g").attr("class", "points").selectAll("g").data(graphs.points).enter().append("circle").attr("transform", function (d) {
+          return "translate(" + projection([d.lon, d.lat]) + ")";
+        }).attr("r", function (d) {
+          return d.size;
+        }).style("fill", "#fff").style("stroke", function (d) {
+          return "rgb(" + d.color.r + "," + d.color.g + "," + d.color.b + ")";
+        }).style("stroke-width", "2px");
       }
     });
   }

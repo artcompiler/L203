@@ -391,6 +391,35 @@ let translate = (function() {
       }
     });
   }
+  function features(node, options, resume){//0 = map, 1 = array
+    visit(node.elts[0], options, function (err, val) {
+      if(typeof val !== "object" || !val || !val.height){
+        err = err.concat(error("Argument Map invalid.", node.elts[0]));
+        resume([].concat(err), val);
+      } else {
+      	visit(node.elts[1], options, function (err1, val1) {
+      		var points = [];
+      		var linepts = [];
+      		if(val1 instanceof Array){
+      			val1.forEach(function (element, index) {
+      				if(element.key == "point" && !isNaN(element.lat) && !isNaN(element.lon)){
+      					points = points.concat(element);//expect to use 'd.lat' and 'd.lon' in d3 functions a lot and pass in points as data.
+      				} else if(element.key == "line" && !isNaN(element.lat) && !isNaN(element.lon)){
+      					linepts = linepts.concat(element);//handle exactly like points except for the segments between them.
+      				} else {
+      					err1 = err1.concat(error("Index "+index+" contains an invalid feature.", node.elts[1]));
+      				}
+      			});
+      		} else {
+      			err1 = err1.concat(error("Argument features must be an array.", node.elts[1]));
+      		}
+      		val.points = points;
+      		val.lines = linepts;
+      		resume([].concat(err).concat(err1), val);
+      	});
+      }
+    });
+  }
   function width(node, options, resume) {
     let params = {
       op: "positive",
@@ -484,52 +513,108 @@ let translate = (function() {
   		});
   	});
   }
-  function point(node, options, resume) {//[latitudes], [longitudes], map
-  	visit(node.elts[1], options, function (err1, val1) {//[longitudes]
-  		var ret1 = [];
-  		if(val1 instanceof Array){
-  			val1.forEach(function (element, index) {
-  				if(!isNaN(element) && Math.abs(element) <= 180){
-  				} else {
-  					err1 = err1.concat(error("Argument for longitude at index "+index+" invalid.", node.elts[1]));
-  				}
-  				ret1 = ret1.concat(+element);
-  			});
-  		} else if(!isNaN(val1) && Math.abs(val1) <= 180){
-  			ret1 = ret1.concat(+val1);
+  function point(node, options, resume) {//latitude, longitude
+  	var ret1 = null;
+  	visit(node.elts[0], options, function (err1, val1) {//longitude
+  		if(!isNaN(val1) && Math.abs(val1) <= 180){
+  			ret1 = +val1;
   		} else {
-  			err1 = err1.concat(error("Argument array for longitude invalid.", node.elts[1]));
+  			err1 = err1.concat(error("Argument for longitude invalid.", node.elts[0]));
   		}
-  		visit(node.elts[2], options, function (err2, val2) {//[latitudes]
-	  		var ret2 = [];
-	  		if(val2 instanceof Array){
-	  			val2.forEach(function (element, index) {
-	  				if(!isNaN(element) && Math.abs(element) <= 90){
-	  				} else {
-	  					err2 = err2.concat(error("Argument for latitude at index "+index+" invalid.", node.elts[2]));
-	  				}
-	  				ret2 = ret2.concat(+element);
-	  			});
-	  		} else if(!isNaN(val2) && Math.abs(val2) <= 90){
-	  			ret2 = ret2.concat(+val2);
+  		visit(node.elts[1], options, function (err2, val2) {//latitude
+	  		var ret2 = null;
+	  		if(!isNaN(val2) && Math.abs(val2) <= 90){
+	  			ret2 = +val2;
 	  		} else {
-	  			err2 = err2.concat(error("Argument array for latitude invalid.", node.elts[2]));
-	  		}//if these two aren't equal it won't exactly work.
-	  		if(ret1.length > ret2.length){
-	  			err2 = err2.concat(error("Argument array for latitude missing parameters.", node.elts[2]));
-	  		} else if(ret1.length < ret2.length){
-	  			err1 = err1.concat(error("Argument array for longitude missing parameters.", node.elts[1]));
+	  			err2 = err2.concat(error("Argument for latitude invalid.", node.elts[1]));
 	  		}
-  			let params = {
-  				op: "default",
-  				prop: "points",
-  				val: [ret1, ret2]
-  			};
-  			set(node, options, function (err, val) {//map
-  				resume([].concat(err).concat(err1).concat(err2), val);
-  			}, params);
+	  		resume([].concat(err1).concat(err2), {
+	  			key: "point",
+	  			lat: ret2,
+	  			lon: ret1,
+	  			color: {r: 255, g: 0, b: 0, a: 100},
+	  			size: 4.5,
+	  			label: ''
+	  		});
   		});
   	});
+  }
+  function path(node, options, resume) {//latitude, longitude
+  	var ret1 = [];
+  	visit(node.elts[0], options, function (err1, val1) {//longitude
+  		/*if(!isNaN(val1) && Math.abs(val1) <= 180){
+  			ret1 = +val1;
+  		}*/
+  		if(val1 instanceof Array){
+  			val1.forEach(function (element, index){
+  				if(!isNaN(element) && Math.abs(+element) <= 180){
+  					ret1 = ret1.concat(+element);
+  				} else {
+  					err1 = err1.concat(error("Index "+index+" contains an invalid longitude.", node.elts[0]));
+  				}
+  			});
+  		} else {
+  			err1 = err1.concat(error("Argument array for longitude invalid.", node.elts[0]));
+  		}
+  		visit(node.elts[1], options, function (err2, val2) {//latitude
+	  		var ret2 = [];
+	  		if(val2 instanceof Array){
+	  			val2.forEach(function (element, index){
+	  				if(!isNaN(element) && Math.abs(+element) <= 90){
+	  					ret2 = ret2.concat(+element);
+	  				} else {
+	  					err2 = err2.concat(error("Index "+index+" contains an invalid latitude.", node.elts[1]));
+	  				}
+	  			});
+	  		} else {
+	  			err2 = err2.concat(error("Argument array for latitude invalid.", node.elts[1]));
+	  		}
+	  		resume([].concat(err1).concat(err2), {
+	  			key: "line",
+	  			lat: ret2,
+	  			lon: ret1,
+	  			color: {r: 255, g: 0, b: 0, a: 100},
+	  			size: 4.5,
+	  			label: ''
+	  		});
+  		});
+  	});
+  }
+  function color(node, options, resume){
+    visit(node.elts[0], options, function (err, val) {
+    	var ret = null;
+      if(typeof val === "object" && val && !isNaN(val.lat)){
+      	visit(node.elts[1], options, function (err1, val1) {
+      		ret = colorcheck(val1);
+      		if(ret.err && ret.err.length){
+  					err1 = err1.concat(error(ret.err + '.', node.elts[1]));
+  				}
+  				err = err.concat(err1);
+      	});
+      } else {
+      	err = err.concat(error("Argument is not a point or path.", node.elts[0]));
+      }
+      val.color = ret;
+      resume([].concat(err), val);
+    });
+  }
+  function size(node, options, resume){
+    visit(node.elts[0], options, function (err, val) {
+    	var ret = null;
+      if(typeof val === "object" && val && !isNaN(val.lat)){
+      	visit(node.elts[1], options, function (err1, val1) {
+      		ret = val1;
+      		if(isNaN(ret) || +ret < 0){
+  					err1 = err1.concat(error("Argument is not a positive number.", node.elts[1]));
+  				}
+  				err = err.concat(err1);
+      	});
+      } else {
+      	err = err.concat(error("Argument is not a point or path.", node.elts[0]));
+      }
+      val.size = +ret;
+      resume([].concat(err), val);
+    });
   }
   function map(node, options, resume){//takes in projection, latitude and longitude
   	let ret = {
@@ -652,6 +737,7 @@ let translate = (function() {
   			if(temp.err && temp.err.length){
   				err2 = err2.concat(error(temp.err + '.', node.elts[1]));
   			}
+  			ret = ret.concat(temp);
   		} else {
   			val2.forEach(function (element, index) {
   				temp = colorcheck(element);
@@ -880,6 +966,9 @@ let translate = (function() {
     "LIMIT" : limit,
     "ZOOM" : zoom,
     "POINT" : point,
+    "FEATURES" : features,
+    "COLOR" : color,
+    "SIZE" : size,
   }
   return translate;
 })();
