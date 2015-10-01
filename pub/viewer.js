@@ -759,9 +759,12 @@ window.exports.viewer = (function () {
     if (graphs.zoom) {
       var zoomed = function zoomed() {
         g.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
-        svgd.selectAll("circle").attr("r", function (d) {
+        svgd.selectAll(".points").attr("r", function (d) {
           return d.size / d3.event.scale;
         }).style("stroke-width", 2 / d3.event.scale + "px");
+        svgd.selectAll(".route").style("stroke-width", function (d) {
+          return d.size / d3.event.scale + "px";
+        });
       };
 
       var zoom = d3.behavior.zoom().scaleExtent(graphs.zoom).on("zoom", zoomed);
@@ -771,7 +774,6 @@ window.exports.viewer = (function () {
     var prev = null;
     d3.json(filepath, function (error, world) {
       if (error) console.log("Didn't work: " + error);
-      //try this
       var dat = graphs.states ? world.objects.states : world.objects.countries;
       var feat = topojson.feature(world, dat);
       function coordcheck(elt, index) {
@@ -800,16 +802,36 @@ window.exports.viewer = (function () {
           tt.a = graphs.opacity;
         }
         return "rgba(" + tt.r + "," + tt.g + "," + tt.b + "," + tt.a + ")";
-      }).style("stroke", "rgba(" + graphs.bcolor.r + "," + graphs.bcolor.g + "," + graphs.bcolor.b + "," + graphs.bcolor.a + ")").style("stroke-width", 0.5 + "px").attr("d", path).on("click", function (d, i) {
-        if (cur) {
+      }).style("stroke", "rgba(" + graphs.bcolor.r + "," + graphs.bcolor.g + "," + graphs.bcolor.b + "," + graphs.bcolor.a + ")").style("stroke-width", 0.5 + "px").attr("d", path);
+
+      /*.on("click", function (d, i){
+        if(cur){
           cur.style.fill = prev;
         }
         prev = this.style.fill;
         this.style.fill = "red";
         cur = this;
-      });
+      })*/if (graphs.lines) {
+        //array of linestrings
+        var linegroup = g.append("g");
+        linegroup.selectAll("g").data(graphs.lines).enter().append("path").attr("class", "route").attr("d", path).style("fill", "none").style("stroke", function (d) {
+          console.log(d);return "rgb(" + d.color.r + "," + d.color.g + "," + d.color.b + ")";
+        }).style("stroke-width", function (d) {
+          return d.size + "px";
+        });
+        graphs.lines.forEach(function (element) {
+          linegroup.selectAll("g").data(element.coordinates).enter().append("circle").attr("class", "points").attr("transform", function (d) {
+            return "translate(" + projection(d) + ")";
+          }).attr("r", function (d, i) {
+            d.size = element.pointsize[i];return d.size;
+          }).style("fill", "#fff").style("stroke", function (d, i) {
+            var c = element.pointcolor[i];
+            return "rgb(" + c.r + "," + c.g + "," + c.b + ")";
+          }).style("stroke-width", "2px");
+        });
+      }
       if (graphs.points) {
-        g.append("g").attr("class", "points").selectAll("g").data(graphs.points).enter().append("circle").attr("transform", function (d) {
+        g.append("g").selectAll("g").data(graphs.points).enter().append("circle").attr("class", "points").attr("transform", function (d) {
           return "translate(" + projection([d.lon, d.lat]) + ")";
         }).attr("r", function (d) {
           return d.size;
