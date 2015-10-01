@@ -832,7 +832,7 @@ window.exports.viewer = (function () {
             var c = element.pointcolor[i];
             return "rgb(" + c.r + "," + c.g + "," + c.b + ")";
           }).style("stroke-width", "2px");
-          linegroup.selectAll("g").data(element.coordinates).enter().append("text").attr("class", "points").attr("transform", function (d) {
+          linegroup.selectAll("g").data(element.coordinates).enter().append("text").attr("class", "text").attr("transform", function (d) {
             return "translate(" + projection(d) + ")";
           }).attr("y", 10).attr("dy", ".71em").text(function (d, i) {
             return element.pointlabel[i];
@@ -840,7 +840,8 @@ window.exports.viewer = (function () {
         });
       }
       if (graphs.points) {
-        g.append("g").selectAll("g").data(graphs.points).enter().append("circle").attr("class", "points").attr("transform", function (d) {
+        var pointgroup = g.append("g");
+        pointgroup.selectAll("g").data(graphs.points).enter().append("circle").attr("class", "points").attr("transform", function (d) {
           return "translate(" + projection([d.lon, d.lat]) + ")";
         }).attr("r", function (d) {
           return d.size;
@@ -849,6 +850,11 @@ window.exports.viewer = (function () {
         }).style("stroke", function (d) {
           return "rgb(" + d.color.r + "," + d.color.g + "," + d.color.b + ")";
         }).style("stroke-width", "2px");
+        pointgroup.selectAll("g").data(graphs.points).enter().append("text").attr("class", "text").attr("transform", function (d) {
+          return "translate(" + projection([d.lon, d.lat]) + ")";
+        }).attr("y", 10).attr("dy", ".71em").text(function (d) {
+          return d.label;
+        }).style("text-anchor", "middle").style("font", "11px sans-serif");
       }
     });
   }
