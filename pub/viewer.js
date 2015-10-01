@@ -765,6 +765,7 @@ window.exports.viewer = (function () {
         svgd.selectAll(".route").style("stroke-width", function (d) {
           return d.size / d3.event.scale + "px";
         });
+        svgd.selectAll("text").attr("y", 10 / d3.event.scale).style("font", 11 / d3.event.scale + "px sans-serif");
       };
 
       var zoom = d3.behavior.zoom().scaleExtent(graphs.zoom).on("zoom", zoomed);
@@ -815,7 +816,7 @@ window.exports.viewer = (function () {
         //array of linestrings
         var linegroup = g.append("g");
         linegroup.selectAll("g").data(graphs.lines).enter().append("path").attr("class", "route").attr("d", path).style("fill", "none").style("stroke", function (d) {
-          console.log(d);return "rgb(" + d.color.r + "," + d.color.g + "," + d.color.b + ")";
+          return "rgb(" + d.color.r + "," + d.color.g + "," + d.color.b + ")";
         }).style("stroke-width", function (d) {
           return d.size + "px";
         });
@@ -824,10 +825,18 @@ window.exports.viewer = (function () {
             return "translate(" + projection(d) + ")";
           }).attr("r", function (d, i) {
             d.size = element.pointsize[i];return d.size;
-          }).style("fill", "#fff").style("stroke", function (d, i) {
+          }).style("fill", function (d, i) {
+            var c = element.pointcolor[i];
+            return "rgb(" + c.r + "," + c.g + "," + c.b + ")";
+          }).style("stroke", function (d, i) {
             var c = element.pointcolor[i];
             return "rgb(" + c.r + "," + c.g + "," + c.b + ")";
           }).style("stroke-width", "2px");
+          linegroup.selectAll("g").data(element.coordinates).enter().append("text").attr("class", "points").attr("transform", function (d) {
+            return "translate(" + projection(d) + ")";
+          }).attr("y", 10).attr("dy", ".71em").text(function (d, i) {
+            return element.pointlabel[i];
+          }).style("text-anchor", "middle").style("font", "11px sans-serif");
         });
       }
       if (graphs.points) {
@@ -835,7 +844,9 @@ window.exports.viewer = (function () {
           return "translate(" + projection([d.lon, d.lat]) + ")";
         }).attr("r", function (d) {
           return d.size;
-        }).style("fill", "#fff").style("stroke", function (d) {
+        }).style("fill", function (d) {
+          return "rgb(" + d.color.r + "," + d.color.g + "," + d.color.b + ")";
+        }).style("stroke", function (d) {
           return "rgb(" + d.color.r + "," + d.color.g + "," + d.color.b + ")";
         }).style("stroke-width", "2px");
       }
