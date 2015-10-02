@@ -798,7 +798,7 @@ window.exports.viewer = (function () {
           return i;
         }
       }).enter().append("path").style("fill", function (d, i) {
-        var tt = color(i);
+        var tt = graphs.hl[d.id] ? graphs.hl[d.id] : color(i);
         if (isNaN(tt.a)) {
           tt.a = graphs.opacity;
         }
@@ -806,6 +806,7 @@ window.exports.viewer = (function () {
       }).style("stroke", "rgba(" + graphs.bcolor.r + "," + graphs.bcolor.g + "," + graphs.bcolor.b + "," + graphs.bcolor.a + ")").style("stroke-width", 0.5 + "px").attr("d", path);
 
       /*.on("click", function (d, i){
+        console.log(d.id);
         if(cur){
           cur.style.fill = prev;
         }

@@ -657,6 +657,7 @@ let translate = (function() {
   		bgcolor: {r: 255, g: 255, b: 255},
   		opacity: 1,
   		rotation: [0, 0],
+  		hl: [],
   	};
   	visit(node.elts[0], options, function (err1, val1) {//longitude
   		if(!isNaN(val1)){
@@ -788,6 +789,38 @@ let translate = (function() {
   		set(node, options, function (err1, val1) {
   			resume([].concat(err1).concat(err2), val1);
   		}, params);
+  	});
+  }
+  function highlight(node, options, resume){//0 = map, 1 = colors, 2 = ids
+  	var ret = [];
+  	visit(node.elts[1], options, function (err1, val1) {//colors
+  		if(!(val1 instanceof Array)){
+  			err1 = err1.concat(error("Argument colors must be an array.", node.elts[1]));
+  		}
+  		visit(node.elts[2], options, function (err2, val2) {//ids
+  			if(!(val2 instanceof Array)){
+  				err2 = err2.concat(error("Argument ids must be an array.", node.elts[2]));
+  			} else {
+  				val2.forEach(function (element, index){
+  					if(isNaN(element) || element < 0){
+  						err2 = err2.concat(error("Index "+index+" contains an invalid id."))
+  					} else {
+  						ret[element] = colorcheck(val1[index]);
+  						if(ret[element].err && ret[element].err.length){
+  							err1 = err1.concat(error(ret[element].err+" at index "+index+'.', node.elts[1]));
+  						}
+  					}
+  				});
+  			}
+  			let params = {
+  				op: "default",
+  				prop: "hl",
+  				val: ret
+  			};
+	  		set(node, options, function (err, val) {
+	  			resume([].concat(err).concat(err1).concat(err2), val);
+	  		}, params);
+  		});
   	});
   }
   function border(node, options, resume) {
@@ -1005,6 +1038,7 @@ let translate = (function() {
     "SIZE" : size,
     "LABEL" : label,
     "ROTATE" : rotate,
+    "HIGHLIGHT": highlight,
   }
   return translate;
 })();

@@ -32,4 +32,5 @@ exports.globalLexicon = {
     "color" : { "tk": 0x01, "name": "COLOR", "cls": "function", "length": 2, "arity": 2},
     "size" : { "tk": 0x01, "name": "SIZE", "cls": "function", "length": 2, "arity": 2},
     "label" : { "tk": 0x01, "name": "LABEL", "cls": "function", "length": 2, "arity": 2},
+    "highlight" : { "tk": 0x01, "name": "HIGHLIGHT", "cls": "function", "length": 3, "arity": 3},
 }
