@@ -743,7 +743,7 @@ window.exports.viewer = (function () {
         projection = d3.geo.stereographic().clipAngle(180 - 1e-4).clipExtent([[0, 0], [graphs.width, graphs.height]]);
         break;
     }
-    projection.center([graphs.longitude, graphs.latitude]).scale(graphs.scale).translate([graphs.width / 2, graphs.height / 2]);
+    projection.center([graphs.longitude, graphs.latitude]).scale(graphs.scale).translate([graphs.width / 2, graphs.height / 2]).rotate(graphs.rotation);
     if (graphs.parallels) {
       projection.parallels(graphs.parallels);
     }

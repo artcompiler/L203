@@ -457,12 +457,42 @@ let translate = (function() {
   		resume([].concat(err), val);
   	}, params);
   }
+  function rotate(node, options, resume) {
+  	var ret = [];
+  	visit(node.elts[1], options, function (err1, val1) {
+  		if(val1 instanceof Array && val1.length > 1){
+  			if(!isNaN(val1[0])){
+  				ret = ret.concat(+val1[0]);
+  			} else {
+  				err1 = err1.concat(error("Yaw must be a number.", node.elts[1]));
+  			}
+  			if(!isNaN(val1[1])){
+  				ret = ret.concat(+val1[1]);
+  			} else {
+  				err1 = err1.concat(error("Pitch must be a number.", node.elts[1]));
+  			}
+  			if(!isNaN(val1[2])){
+  				ret = ret.concat(+val1[2]);
+  			} //roll is optional, so no error.
+  		} else {
+  			err1 = err1.concat(error("Argument must be an array with at least two values.", node.elts[1]));
+  		}
+  		let params = {
+  			op: "default",
+  			prop: "rotation",
+  			val: ret
+  		};
+  		set(node, options, function (err, val) {
+  			resume([].concat(err).concat(err1), val);
+  		}, params);
+  	});
+  }
   function parallels(node, options, resume) {//latitude, longitude, map
   	visit(node.elts[1], options, function (err1, val1) {//longitude
   		if(!isNaN(val1)){
   			val1 = +val1;
   		} else {
-  			err1 = err1.concat(error("Argument longitude is not a number.", node.elts[1]))
+  			err1 = err1.concat(error("Argument longitude is not a number.", node.elts[1]));
   		}
   		visit(node.elts[2], options, function (err2, val2) {//latitude
   			if(!isNaN(val2)){
@@ -625,7 +655,8 @@ let translate = (function() {
   		color: [{r: 0, g: 0, b: 0}],
   		bcolor: {r: 255, g: 255, b: 255, a: 100},
   		bgcolor: {r: 255, g: 255, b: 255},
-  		opacity: 1
+  		opacity: 1,
+  		rotation: [0, 0],
   	};
   	visit(node.elts[0], options, function (err1, val1) {//longitude
   		if(!isNaN(val1)){
@@ -972,6 +1003,7 @@ let translate = (function() {
     "COLOR" : color,
     "SIZE" : size,
     "LABEL" : label,
+    "ROTATE" : rotate,
   }
   return translate;
 })();

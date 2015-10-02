@@ -13,6 +13,7 @@ exports.globalLexicon = {
     "width" : { "tk": 0x01, "name": "WIDTH", "cls": "function", "length": 2, "arity": 2},
     "height" : { "tk": 0x01, "name": "HEIGHT", "cls": "function", "length": 2, "arity": 2},
     "scale" : { "tk": 0x01, "name": "SCALE", "cls": "function", "length": 2, "arity": 2},
+    "rotate" : { "tk": 0x01, "name": "ROTATE", "cls": "function", "length": 2, "arity": 2},
     "parallels" : { "tk": 0x01, "name": "PARALLELS", "cls": "function", "length": 3, "arity": 3},
     "fill" : { "tk": 0x01, "name": "FILL", "cls": "function", "length": 2, "arity": 2},
     "border-color" : { "tk": 0x01, "name": "BORDER", "cls": "function", "length": 2, "arity": 2},
