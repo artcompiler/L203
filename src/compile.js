@@ -464,12 +464,12 @@ let translate = (function() {
   			if(!isNaN(val1[0])){
   				ret = ret.concat(+val1[0]);
   			} else {
-  				err1 = err1.concat(error("Yaw must be a number.", node.elts[1]));
+  				err1 = err1.concat(error("Argument yaw is not a number", node.elts[1]));
   			}
   			if(!isNaN(val1[1])){
   				ret = ret.concat(+val1[1]);
   			} else {
-  				err1 = err1.concat(error("Pitch must be a number.", node.elts[1]));
+  				err1 = err1.concat(error("Argument pitch is not a number.", node.elts[1]));
   			}
   			if(!isNaN(val1[2])){
   				ret = ret.concat(+val1[2]);
@@ -673,6 +673,7 @@ let translate = (function() {
   			visit(node.elts[2], options, function (err3, val3) {//projection
   				switch(val3){
   					case "albers":
+  						ret.rotation = [96, 0];
   						break;
 			      case "azimuthal equal area":
 			      	ret.height = 960;
