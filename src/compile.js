@@ -447,16 +447,6 @@ let translate = (function() {
   		resume([].concat(err), val);
   	}, params);
   }
-  function states(node, options, resume) {
-  	let params = {
-  		op: "default",
-  		prop: "states",
-  		val: true
-  	};
-  	set(node, options, function (err, val) {
-  		resume([].concat(err), val);
-  	}, params);
-  }
   function rotate(node, options, resume) {
   	var ret = [];
   	visit(node.elts[1], options, function (err1, val1) {
@@ -647,7 +637,32 @@ let translate = (function() {
       resume([].concat(err), val);
     });
   }
-  function map(node, options, resume){//takes in projection, latitude and longitude
+  function position(node, options, resume){//position lat long map
+  	var ret = [];
+  	visit(node.elts[1], options, function (err1, val1) {//longitude
+  		if(!isNaN(val1)){
+  			ret[0] = +val1;
+  		} else {
+  			err1 = err1.concat(error("Argument longitude is not a number.", node.elts[1]))
+  		}
+  		visit(node.elts[2], options, function (err2, val2) {//latitude
+  			if(!isNaN(val2)){
+  				ret[1] = +val2;
+  			} else {
+  				err2 = err2.concat(error("Argument latitude is not a number.", node.elts[2]));
+  			}
+  			let params = {
+  				op: "default",
+  				prop: "center",
+  				val: ret
+  			};
+  			set(node, options, function (err, val) {//map
+  				resume([].concat(err).concat(err1).concat(err2), val);
+  			}, params);
+  		});
+  	});
+  }
+  function map(node, options, resume){//takes in projection and map
   	let ret = {
   		width: 960,
   		height: 550,
@@ -658,67 +673,62 @@ let translate = (function() {
   		opacity: 1,
   		rotation: [0, 0],
   		hl: [],
+  		center: [0, 0],
   	};
-  	visit(node.elts[0], options, function (err1, val1) {//longitude
-  		if(!isNaN(val1)){
-  			ret.longitude = +val1;
-  		} else {
-  			err1 = err1.concat(error("Argument longitude is not a number.", node.elts[0]))
-  		}
-  		visit(node.elts[1], options, function (err2, val2) {//latitude
-  			if(!isNaN(val2)){
-  				ret.latitude = +val2;
-  			} else {
-  				err2 = err2.concat(error("Argument latitude is not a number.", node.elts[1]));
-  			}
-  			visit(node.elts[2], options, function (err3, val3) {//projection
-  				switch(val3){
-  					case "albers":
-  						ret.rotation = [96, 0];
-  						break;
-			      case "azimuthal equal area":
-			      	ret.height = 960;
-			      	ret.scale = 237;
-			        break;
-			      case "azimuthal equidistant":
-			      	ret.height = 960;
-			      	ret.scale = 150;
-			        break;
-			      case "conic conformal":
-			        break;
-			      case "conic equal area":
-			        break;
-			      case "conic equidistant":
-			      	ret.scale = 128;
-			        break;
-			      case "equirectangular":
-			      	ret.height = 480;
-			        break;
-			      case "gnomonic":
-			      	ret.height = 960;
-			      	ret.scale = 150;
-			        break;
-			      case "mercator":
-			      	ret.height = 960;
-			        break;
-			      case "transverse mercator":
-			      	ret.height = 960;
-			        break;
-			      case "orthographic":
-			      	ret.height = 960;
-			      	ret.scale = 475;
-			        break;
-			      case "stereographic":
-			      	ret.height = 960;
-			      	ret.scale = 245;
-			        break;
-			      default:
-			      	err3 = err3.concat(error("Argument projection is not a valid type.", node.elts[2]));
-			    }
-  				ret.projection = val3;
-  				resume([].concat(err1).concat(err2).concat(err3), ret);
-  			});
-  		});
+		visit(node.elts[1], options, function (err1, val1) {//projection
+			switch(val1){
+				case "albers":
+					ret.rotation = [96, 0];
+					ret.center = [0, 60];
+					break;
+	      case "azimuthal equal area":
+	      	ret.height = 960;
+	      	ret.scale = 237;
+	        break;
+	      case "azimuthal equidistant":
+	      	ret.height = 960;
+	      	ret.scale = 150;
+	        break;
+	      case "conic conformal":
+	        break;
+	      case "conic equal area":
+	        break;
+	      case "conic equidistant":
+	      	ret.scale = 128;
+	        break;
+	      case "equirectangular":
+	      	ret.height = 480;
+	        break;
+	      case "gnomonic":
+	      	ret.height = 960;
+	      	ret.scale = 150;
+	        break;
+	      case "mercator":
+	      	ret.height = 960;
+	        break;
+	      case "transverse mercator":
+	      	ret.height = 960;
+	        break;
+	      case "orthographic":
+	      	ret.height = 960;
+	      	ret.scale = 475;
+	        break;
+	      case "stereographic":
+	      	ret.height = 960;
+	      	ret.scale = 245;
+	        break;
+	      default:
+	      	err1 = err1.concat(error("Argument projection is not a valid type.", node.elts[1]));
+	    }
+			ret.projection = val1;
+			visit(node.elts[0], options, function (err, val) {
+				if(typeof val === 'string'){
+					ret.map = val;
+				} else {
+					err = err.concat(error("Argument map is not a valid string.", node.elts[0]));
+				}
+				resume([].concat(err).concat(err1), ret);
+			});
   	});
   }
   function zoom(node, options, resume) {//0 = map, 1 = max, 2 = min --- zoom min max map
@@ -1028,7 +1038,6 @@ let translate = (function() {
     "RGB" : rgb,
     "RGBA" : rgba,
     "BREWER" : brewer,
-    "STATES" : states,
     "LIMIT" : limit,
     "ZOOM" : zoom,
     "POINT" : point,
@@ -1039,6 +1048,7 @@ let translate = (function() {
     "LABEL" : label,
     "ROTATE" : rotate,
     "HIGHLIGHT": highlight,
+    "POSITION": position,
   }
   return translate;
 })();

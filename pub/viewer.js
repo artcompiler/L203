@@ -743,7 +743,7 @@ window.exports.viewer = (function () {
         projection = d3.geo.stereographic().clipAngle(180 - 1e-4).clipExtent([[0, 0], [graphs.width, graphs.height]]);
         break;
     }
-    projection.center([graphs.longitude, graphs.latitude]).scale(graphs.scale).translate([graphs.width / 2, graphs.height / 2]).rotate(graphs.rotation);
+    projection.center(graphs.center).scale(graphs.scale).translate([graphs.width / 2, graphs.height / 2]).rotate(graphs.rotation);
     if (graphs.parallels) {
       projection.parallels(graphs.parallels);
     }
@@ -752,10 +752,11 @@ window.exports.viewer = (function () {
     svgd.attr("width", graphs.width).attr("height", graphs.height).style("background-color", "rgb(" + graphs.bgcolor.r + "," + graphs.bgcolor.g + "," + graphs.bgcolor.b + ")");
     var g = svgd.append("g");
     g.append("path").datum(graticule).attr("class", "graticule").attr("d", path).style("fill-opacity", 0).style("stroke", "#777").style("stroke-width", 0.5 + "px").style("stroke-opacity", 0.5);
-    var filepath = "./data/world-50m.json";
-    if (graphs.states) {
+    /*var filepath = "./data/world-50m.json";
+    if(graphs.states){
       filepath = "./data/world.json";
-    }
+    }*/
+    var filepath = graphs.map;
     if (graphs.zoom) {
       var zoomed = function zoomed() {
         g.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
