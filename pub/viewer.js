@@ -776,7 +776,7 @@ window.exports.viewer = (function () {
     var prev = null;
     d3.json(filepath, function (error, world) {
       if (error) console.log("Didn't work: " + error);
-      var dat = graphs.states ? world.objects.states : world.objects.countries;
+      var dat = world.objects.states ? world.objects.states : world.objects.countries;
       var feat = topojson.feature(world, dat);
       function coordcheck(elt, index) {
         //finds all the coordinate pairs in the mess of arrays.
