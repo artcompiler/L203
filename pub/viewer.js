@@ -776,7 +776,7 @@ window.exports.viewer = (function () {
     var prev = null;
     d3.json(filepath, function (error, world) {
       if (error) console.log("Didn't work: " + error);
-      var dat = world.objects.states ? world.objects.states : world.objects.countries;
+      var dat = world.objects.states || world.objects.countries;
       var feat = topojson.feature(world, dat);
       function coordcheck(elt, index) {
         //finds all the coordinate pairs in the mess of arrays.
@@ -799,22 +799,26 @@ window.exports.viewer = (function () {
           return i;
         }
       }).enter().append("path").style("fill", function (d, i) {
-        var tt = graphs.hl[d.id] ? graphs.hl[d.id] : color(i);
+        var tt = graphs.hl[d.id] || color(i);
         if (isNaN(tt.a)) {
           tt.a = graphs.opacity;
         }
         return "rgba(" + tt.r + "," + tt.g + "," + tt.b + "," + tt.a + ")";
-      }).style("stroke", "rgba(" + graphs.bcolor.r + "," + graphs.bcolor.g + "," + graphs.bcolor.b + "," + graphs.bcolor.a + ")").style("stroke-width", 0.5 + "px").attr("d", path);
-
-      /*.on("click", function (d, i){
-        console.log(d.id);
-        if(cur){
-          cur.style.fill = prev;
+      }).style("stroke", "rgba(" + graphs.bcolor.r + "," + graphs.bcolor.g + "," + graphs.bcolor.b + "," + graphs.bcolor.a + ")").style("stroke-width", 0.5 + "px").attr("d", path).on("click", function (d, i) {
+        if (graphs.chl.length) {
+          if (cur) {
+            cur.style.fill = prev;
+          }
+          prev = this.style.fill;
+          var tt = graphs.chl[d.id] || graphs.chl['_'] || prev;
+          if (isNaN(tt.a)) {
+            tt.a = graphs.opacity;
+          }
+          this.style.fill = "rgba(" + tt.r + "," + tt.g + "," + tt.b + "," + tt.a + ")";
+          cur = this;
         }
-        prev = this.style.fill;
-        this.style.fill = "red";
-        cur = this;
-      })*/if (graphs.lines) {
+      });
+      if (graphs.lines) {
         //array of linestrings
         var linegroup = g.append("g");
         linegroup.selectAll("g").data(graphs.lines).enter().append("path").attr("class", "route").attr("d", path).style("fill", "none").style("stroke", function (d) {
