@@ -810,7 +810,7 @@ window.exports.viewer = (function () {
             cur.style.fill = prev;
           }
           prev = this.style.fill;
-          var tt = graphs.chl[d.id] || graphs.chl['_'] || prev;
+          var tt = graphs.chl[d.id] || graphs.chl[0] || prev;
           if (isNaN(tt.a)) {
             tt.a = graphs.opacity;
           }
