@@ -637,6 +637,41 @@ let translate = (function() {
       resume([].concat(err), val);
     });
   }
+  let labeloptions = {
+  	"left": "start",
+  	"start": "start",
+  	"center": "middle",
+  	"middle": "middle",
+  	"end": "end",
+  	"right": "end",
+  	"top": "top",
+  	"bottom": "bottom",
+  };
+  function title(node, options, resume){//title text pos map
+  	var ret = {
+  		text: '',
+  		pos: ['', ''],
+  	};
+  	visit(node.elts[1], options, function (err1, val1) {//pos
+  		if(typeof val1 === 'string'){//first word is top, bottom, etc, second is right/left
+  			ret.pos[1] = labeloptions[val1.split(" ")[0]] || "top";
+  			ret.pos[0] = labeloptions[val1.split(" ")[1]] || "middle";
+  		} else {
+  			err1 = err1.concat(error("Argument position is not a valid string.", node.elts[1]));
+  		}
+  		visit(node.elts[2], options, function (err2, val2) {//text
+  			ret.text = ''+val2;
+  			let params = {
+  				op: "default",
+  				prop: "title",
+  				val: ret
+  			};
+  			set(node, options, function (err, val) {//map
+  				resume([].concat(err).concat(err1).concat(err2), val);
+  			}, params);
+  		})
+  	});
+  }
   function position(node, options, resume){//position lat long map
   	var ret = [];
   	visit(node.elts[1], options, function (err1, val1) {//longitude
@@ -672,6 +707,7 @@ let translate = (function() {
   		bgcolor: {r: 255, g: 255, b: 255},
   		opacity: 1,
   		rotation: [0, 0],
+  		style: [{key: "font", val: "16px sans-serif"}],
   		hl: [],
   		chl: [],
   		center: [0, 0],
@@ -1072,6 +1108,7 @@ let translate = (function() {
     "HIGHLIGHT": highlight,
     "CHIGHLIGHT": chighlight,
     "POSITION": position,
+    "TITLE": title,
   }
   return translate;
 })();

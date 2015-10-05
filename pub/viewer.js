@@ -698,6 +698,7 @@ window.exports.viewer = (function () {
     var svgd = d3.select(el);
     svgd.selectAll("path").remove(); //clear each time
     svgd.selectAll("g").remove();
+    svgd.selectAll("text").remove();
     function styles(selection, these) {
       these.forEach(function (p) {
         selection.style(p.key, p.val);
@@ -751,11 +752,34 @@ window.exports.viewer = (function () {
     var graticule = d3.geo.graticule();
     svgd.attr("width", graphs.width).attr("height", graphs.height).style("background-color", "rgb(" + graphs.bgcolor.r + "," + graphs.bgcolor.g + "," + graphs.bgcolor.b + ")");
     var g = svgd.append("g");
+    if (graphs.title) {
+      var theight = 0;
+      var twidth = 0;
+      svgd.append("text").text(graphs.title.text).style("text-anchor", graphs.title.pos[0]).call(styles, graphs.style).each(function () {
+        var b = this.getBBox();
+        theight = b.height;
+        twidth = b.width;
+      }).attr("x", function () {
+        switch (graphs.title.pos[0]) {
+          case "start":
+            return 0;
+          case "middle":
+            return graphs.width / 2;
+          case "end":
+            return graphs.width;
+        }
+      }).attr("y", function () {
+        switch (graphs.title.pos[1]) {
+          case "top":
+            return theight;
+          case "middle":
+            return (graphs.height + theight) / 2;
+          case "bottom":
+            return graphs.height;
+        }
+      });
+    }
     g.append("path").datum(graticule).attr("class", "graticule").attr("d", path).style("fill-opacity", 0).style("stroke", "#777").style("stroke-width", 0.5 + "px").style("stroke-opacity", 0.5);
-    /*var filepath = "./data/world-50m.json";
-    if(graphs.states){
-      filepath = "./data/world.json";
-    }*/
     var filepath = graphs.map;
     if (graphs.zoom) {
       var zoomed = function zoomed() {
@@ -766,7 +790,7 @@ window.exports.viewer = (function () {
         svgd.selectAll(".route").style("stroke-width", function (d) {
           return d.size / d3.event.scale + "px";
         });
-        svgd.selectAll("text").attr("y", 10 / d3.event.scale).style("font", 11 / d3.event.scale + "px sans-serif");
+        svgd.selectAll(".text").attr("y", 10 / d3.event.scale).style("font", 11 / d3.event.scale + "px sans-serif");
       };
 
       var zoom = d3.behavior.zoom().scaleExtent(graphs.zoom).on("zoom", zoomed);
