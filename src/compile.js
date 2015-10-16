@@ -318,7 +318,7 @@ let translate = (function() {
     console.log("pool=" + JSON.stringify(pool, null, 2));
     nodePool = pool;
     return visit(pool.root, {}, resume);
-  }
+  };
   function error(str, nid) {
     return {
       str: str,
@@ -333,25 +333,25 @@ let translate = (function() {
     assert(node.tag, message(1001, [nid]));
     assert(typeof table[node.tag] === "function", message(1004, [node.tag]));
     return table[node.tag](node, options, resume);
-  }
+  };
   // BEGIN VISITOR METHODS
   let edgesNode;
   function str(node, options, resume) {
     let val = node.elts[0];
     resume([], val);
-  }
+  };
   function num(node, options, resume) {
     let val = node.elts[0];
     resume([], val);
-  }
+  };
   function ident(node, options, resume) {
     let val = node.elts[0];
     resume([], val);
-  }
+  };
   function bool(node, options, resume) {
     let val = node.elts[0];
     resume([], val);
-  }
+  };
   function add(node, options, resume) {
     visit(node.elts[0], options, function (err1, val1) {
       val1 = +val1;
@@ -369,7 +369,7 @@ let translate = (function() {
   };
   function set(node, options, resume, params){
     visit(node.elts[0], options, function (err, val) {
-      if(typeof val !== "object" || !val || !val.height){
+      if(typeof val !== "object" || !val || !val.scale){
         err = err.concat(error("Argument Map invalid.", node.elts[0]));
       } else {
         if(params.op && params.op === "default"){
@@ -390,36 +390,36 @@ let translate = (function() {
         }
       }
     });
-  }
+  };
   function features(node, options, resume){//0 = map, 1 = array
     visit(node.elts[0], options, function (err, val) {
-      if(typeof val !== "object" || !val || !val.height){
+      if(typeof val !== "object" || !val || !val.scale){
         err = err.concat(error("Argument Map invalid.", node.elts[0]));
         resume([].concat(err), val);
       } else {
-      	visit(node.elts[1], options, function (err1, val1) {
-      		var points = [];
-      		var linepts = [];
-      		if(val1 instanceof Array){
-      			val1.forEach(function (element, index) {
-      				if(element.key == "point" && !isNaN(element.lat) && !isNaN(element.lon)){
-      					points = points.concat(element);//expect to use 'd.lat' and 'd.lon' in d3 functions a lot and pass in points as data.
-      				} else if(element.type == "LineString" && element.coordinates instanceof Array){
-      					linepts = linepts.concat(element);//handle exactly like points except for the segments between them.
-      				} else {
-      					err1 = err1.concat(error("Index "+index+" contains an invalid feature.", node.elts[1]));
-      				}
-      			});
-      		} else {
-      			err1 = err1.concat(error("Argument features must be an array.", node.elts[1]));
-      		}
-      		val.points = points;
-      		val.lines = linepts;
-      		resume([].concat(err).concat(err1), val);
-      	});
+        visit(node.elts[1], options, function (err1, val1) {
+          var points = [];
+          var linepts = [];
+          if(val1 instanceof Array){
+            val1.forEach(function (element, index) {
+              if(element.key === "point" && !isNaN(element.lat) && !isNaN(element.lon)){
+                points = points.concat(element);//expect to use 'd.lat' and 'd.lon' in d3 functions a lot and pass in points as data.
+              } else if(element.type === "LineString" && element.coordinates instanceof Array){
+                linepts = linepts.concat(element);//handle exactly like points except for the segments between them.
+              } else {
+                err1 = err1.concat(error("Index "+index+" contains an invalid feature.", node.elts[1]));
+              }
+            });
+          } else {
+            err1 = err1.concat(error("Argument features must be an array.", node.elts[1]));
+          }
+          val.points = points;
+          val.lines = linepts;
+          resume([].concat(err).concat(err1), val);
+        });
       }
     });
-  }
+  };
   function width(node, options, resume) {
     let params = {
       op: "positive",
@@ -428,7 +428,7 @@ let translate = (function() {
     set(node, options, function (err, val) {
       resume([].concat(err), val);
     }, params);
-  }
+  };
   function height(node, options, resume) {
     let params = {
       op: "positive",
@@ -437,516 +437,510 @@ let translate = (function() {
     set(node, options, function (err, val) {
       resume([].concat(err), val);
     }, params);
-  }
+  };
   function scale(node, options, resume) {
-  	let params = {
-  		op: "positive",
-  		prop: "scale"
-  	};
-  	set(node, options, function (err, val) {
-  		resume([].concat(err), val);
-  	}, params);
-  }
+    let params = {
+      op: "positive",
+      prop: "scale"
+    };
+    set(node, options, function (err, val) {
+      resume([].concat(err), val);
+    }, params);
+  };
   function rotate(node, options, resume) {
-  	var ret = [];
-  	visit(node.elts[1], options, function (err1, val1) {
-  		if(val1 instanceof Array && val1.length > 1){
-  			if(!isNaN(val1[0])){
-  				ret = ret.concat(+val1[0]);
-  			} else {
-  				err1 = err1.concat(error("Argument yaw is not a number", node.elts[1]));
-  			}
-  			if(!isNaN(val1[1])){
-  				ret = ret.concat(+val1[1]);
-  			} else {
-  				err1 = err1.concat(error("Argument pitch is not a number.", node.elts[1]));
-  			}
-  			if(!isNaN(val1[2])){
-  				ret = ret.concat(+val1[2]);
-  			} //roll is optional, so no error.
-  		} else {
-  			err1 = err1.concat(error("Argument must be an array with at least two values.", node.elts[1]));
-  		}
-  		let params = {
-  			op: "default",
-  			prop: "rotation",
-  			val: ret
-  		};
-  		set(node, options, function (err, val) {
-  			resume([].concat(err).concat(err1), val);
-  		}, params);
-  	});
-  }
+    var ret = [];
+    visit(node.elts[1], options, function (err1, val1) {
+      if(val1 instanceof Array && val1.length > 1){
+        if(!isNaN(val1[0])){
+          ret = ret.concat(+val1[0]);
+        } else {
+          err1 = err1.concat(error("Argument yaw is not a number", node.elts[1]));
+        }
+        if(!isNaN(val1[1])){
+          ret = ret.concat(+val1[1]);
+        } else {
+          err1 = err1.concat(error("Argument pitch is not a number.", node.elts[1]));
+        }
+        if(!isNaN(val1[2])){
+          ret = ret.concat(+val1[2]);
+        } //roll is optional, so no error.
+      } else {
+        err1 = err1.concat(error("Argument must be an array with at least two values.", node.elts[1]));
+      }
+      let params = {
+        op: "default",
+        prop: "rotation",
+        val: ret
+      };
+      set(node, options, function (err, val) {
+        resume([].concat(err).concat(err1), val);
+      }, params);
+    });
+  };
   function parallels(node, options, resume) {//latitude, longitude, map
-  	visit(node.elts[1], options, function (err1, val1) {//longitude
-  		if(!isNaN(val1)){
-  			val1 = +val1;
-  		} else {
-  			err1 = err1.concat(error("Argument longitude is not a number.", node.elts[1]));
-  		}
-  		visit(node.elts[2], options, function (err2, val2) {//latitude
-  			if(!isNaN(val2)){
-  				val2 = +val2;
-  			} else {
-  				err2 = err2.concat(error("Argument latitude is not a number.", node.elts[2]));
-  			}
-  			let params = {
-  				op: "default",
-  				prop: "parallels",
-  				val: [val1, val2]
-  			};
-  			set(node, options, function (err, val) {//map
-  				resume([].concat(err).concat(err1).concat(err2), val);
-  			}, params);
-  		});
-  	});
-  }
+    visit(node.elts[1], options, function (err1, val1) {//longitude
+      if(!isNaN(val1)){
+        val1 = +val1;
+      } else {
+        err1 = err1.concat(error("Argument longitude is not a number.", node.elts[1]));
+      }
+      visit(node.elts[2], options, function (err2, val2) {//latitude
+        if(!isNaN(val2)){
+          val2 = +val2;
+        } else {
+          err2 = err2.concat(error("Argument latitude is not a number.", node.elts[2]));
+        }
+        let params = {
+          op: "default",
+          prop: "parallels",
+          val: [val1, val2]
+        };
+        set(node, options, function (err, val) {//map
+          resume([].concat(err).concat(err1).concat(err2), val);
+        }, params);
+      });
+    });
+  };
   function limit(node, options, resume) {//[minlatitude, maxlatitude], [minlongitude, maxlongitude], map
-  	visit(node.elts[1], options, function (err1, val1) {//[minlongitude, maxlongitude]
-  		if(!(val1 instanceof Array) 
-  			|| +val1[0] < -180 
-  			|| +val1[0] > +val1[1]
-  			|| +val1[1] > 180
-  			|| +val1[1] < +val1[0]){
-  			err1 = err1.concat(error("Argument array for longitude invalid.", node.elts[1]));
-  		} else {
-  			val1 = [+val1[0], +val1[1]];//throw out any other potential values.
-  		}
-  		visit(node.elts[2], options, function (err2, val2) {//[minlatitude, maxlatitude]
-  		if(!(val2 instanceof Array) 
-  			|| +val2[0] < -90 
-  			|| +val2[0] > +val2[1]
-  			|| +val2[1] > 90
-  			|| +val2[1] < +val2[0]){
-	  			err2 = err2.concat(error("Argument array for latitude invalid.", node.elts[2]));
-	  		} else {
-	  			val2 = [+val2[0], +val2[1]];//throw out any other potential values.
-	  		}
-  			let params = {
-  				op: "default",
-  				prop: "limits",
-  				val: [val1, val2]
-  			};
-  			set(node, options, function (err, val) {//map
-  				resume([].concat(err).concat(err1).concat(err2), val);
-  			}, params);
-  		});
-  	});
-  }
+    visit(node.elts[1], options, function (err1, val1) {//[minlongitude, maxlongitude]
+      if(!(val1 instanceof Array) 
+        || +val1[0] < -180 
+        || +val1[0] > +val1[1]
+        || +val1[1] > 180
+        || +val1[1] < +val1[0]){
+        err1 = err1.concat(error("Argument array for longitude invalid.", node.elts[1]));
+      } else {
+        val1 = [+val1[0], +val1[1]];//throw out any other potential values.
+      }
+      visit(node.elts[2], options, function (err2, val2) {//[minlatitude, maxlatitude]
+      if(!(val2 instanceof Array) 
+        || +val2[0] < -90 
+        || +val2[0] > +val2[1]
+        || +val2[1] > 90
+        || +val2[1] < +val2[0]){
+          err2 = err2.concat(error("Argument array for latitude invalid.", node.elts[2]));
+        } else {
+          val2 = [+val2[0], +val2[1]];//throw out any other potential values.
+        }
+        let params = {
+          op: "default",
+          prop: "limits",
+          val: [val1, val2]
+        };
+        set(node, options, function (err, val) {//map
+          resume([].concat(err).concat(err1).concat(err2), val);
+        }, params);
+      });
+    });
+  };
   function point(node, options, resume) {//latitude, longitude
-  	var ret1 = null;
-  	visit(node.elts[0], options, function (err1, val1) {//longitude
-  		if(!isNaN(val1) && Math.abs(val1) <= 180){
-  			ret1 = +val1;
-  		} else {
-  			err1 = err1.concat(error("Argument for longitude invalid.", node.elts[0]));
-  		}
-  		visit(node.elts[1], options, function (err2, val2) {//latitude
-	  		var ret2 = null;
-	  		if(!isNaN(val2) && Math.abs(val2) <= 90){
-	  			ret2 = +val2;
-	  		} else {
-	  			err2 = err2.concat(error("Argument for latitude invalid.", node.elts[1]));
-	  		}
-	  		resume([].concat(err1).concat(err2), {
-	  			key: "point",
-	  			lat: ret2,
-	  			lon: ret1,
-	  			color: {r: 255, g: 0, b: 0, a: 100},
-	  			size: 4.5,
-	  			label: ''
-	  		});
-  		});
-  	});
-  }
+    var ret1 = null;
+    visit(node.elts[0], options, function (err1, val1) {//longitude
+      if(!isNaN(val1) && Math.abs(val1) <= 180){
+        ret1 = +val1;
+      } else {
+        err1 = err1.concat(error("Argument for longitude invalid.", node.elts[0]));
+      }
+      visit(node.elts[1], options, function (err2, val2) {//latitude
+        var ret2 = null;
+        if(!isNaN(val2) && Math.abs(val2) <= 90){
+          ret2 = +val2;
+        } else {
+          err2 = err2.concat(error("Argument for latitude invalid.", node.elts[1]));
+        }
+        resume([].concat(err1).concat(err2), {
+          key: "point",
+          lat: ret2,
+          lon: ret1,
+          color: {r: 255, g: 0, b: 0, a: 100},
+          size: 4.5,
+          label: ''
+        });
+      });
+    });
+  };
   function path(node, options, resume) {//[points]
-  	var ret = {
-  		type: "LineString",
-  		coordinates: [],
-  		pointcolor: [],
-  		color: {r: 255, g: 0, b: 0, a: 100},
-  		pointsize: [],
-  		size: 3,
-  		pointlabel: []
-  	};
-		visit(node.elts[0], options, function (err1, val1) {
-			if(val1 instanceof Array){
-				val1.forEach(function (element, index){
-					if(element.key !== "point" || isNaN(element.lat) || isNaN(element.lon)){
-						err1 = err1.concat(error("Index "+index+" contains an invalid point.", node.elts[0]));
-					} else {
-						ret.coordinates = ret.coordinates.concat([[element.lon, element.lat]]);
-						ret.pointcolor = ret.pointcolor.concat(element.color);
-						ret.pointsize = ret.pointsize.concat(element.size);
-						ret.pointlabel = ret.pointlabel.concat(element.label);
-					}
-				});
-			} else {
-				err1 = err1.concat(error("Argument is not a valid array.", node.elts[0]));
-			}
-			resume([].concat(err1), ret);
-		});
-  }
+    var ret = {
+      type: "LineString",
+      coordinates: [],
+      pointcolor: [],
+      color: {r: 255, g: 0, b: 0, a: 100},
+      pointsize: [],
+      size: 3,
+      pointlabel: []
+    };
+    visit(node.elts[0], options, function (err1, val1) {
+      if(val1 instanceof Array){
+        val1.forEach(function (element, index){
+          if(element.key !== "point" || isNaN(element.lat) || isNaN(element.lon)){
+            err1 = err1.concat(error("Index "+index+" contains an invalid point.", node.elts[0]));
+          } else {
+            ret.coordinates = ret.coordinates.concat([[element.lon, element.lat]]);
+            ret.pointcolor = ret.pointcolor.concat(element.color);
+            ret.pointsize = ret.pointsize.concat(element.size);
+            ret.pointlabel = ret.pointlabel.concat(element.label);
+          }
+        });
+      } else {
+        err1 = err1.concat(error("Argument is not a valid array.", node.elts[0]));
+      }
+      resume([].concat(err1), ret);
+    });
+  };
   function color(node, options, resume){
     visit(node.elts[0], options, function (err, val) {
-    	var ret = null;
-      if(typeof val === "object" && val && (val.key == "point" || val.type == "LineString")){
-      	visit(node.elts[1], options, function (err1, val1) {
-      		ret = colorcheck(val1);
-      		if(ret.err && ret.err.length){
-  					err1 = err1.concat(error(ret.err + '.', node.elts[1]));
-  				}
-  				err = err.concat(err1);
-      	});
+      var ret = null;
+      if(typeof val === "object" && val && (val.key === "point" || val.type === "LineString")){
+        visit(node.elts[1], options, function (err1, val1) {
+          ret = colorcheck(val1);
+          if(ret.err && ret.err.length){
+            err1 = err1.concat(error(ret.err + '.', node.elts[1]));
+          }
+          err = err.concat(err1);
+        });
       } else {
-      	err = err.concat(error("Argument is not a point or path.", node.elts[0]));
+        err = err.concat(error("Argument is not a point or path.", node.elts[0]));
       }
       val.color = ret;
       resume([].concat(err), val);
     });
-  }
+  };
   function size(node, options, resume){
     visit(node.elts[0], options, function (err, val) {
-    	var ret = null;
-      if(typeof val === "object" && val && (val.key == "point" || val.type == "LineString")){
-      	visit(node.elts[1], options, function (err1, val1) {
-      		ret = val1;
-      		if(isNaN(ret) || +ret < 0){
-  					err1 = err1.concat(error("Argument is not a positive number.", node.elts[1]));
-  				}
-  				err = err.concat(err1);
-      	});
+      var ret = null;
+      if(typeof val === "object" && val && (val.key === "point" || val.type === "LineString")){
+        visit(node.elts[1], options, function (err1, val1) {
+          ret = val1;
+          if(isNaN(ret) || +ret < 0){
+            err1 = err1.concat(error("Argument is not a positive number.", node.elts[1]));
+          }
+          err = err.concat(err1);
+        });
       } else {
-      	err = err.concat(error("Argument is not a point or path.", node.elts[0]));
+        err = err.concat(error("Argument is not a point or path.", node.elts[0]));
       }
       val.size = +ret;
       resume([].concat(err), val);
     });
-  }
+  };
   function label(node, options, resume){
     visit(node.elts[0], options, function (err, val) {
-    	var ret = null;
-      if(typeof val === "object" && val && (val.key == "point")){
-      	visit(node.elts[1], options, function (err1, val1) {
-  				err = err.concat(err1);
-  				val.label = val1;
-      	});
+      var ret = null;
+      if(typeof val === "object" && val && (val.key === "point")){
+        visit(node.elts[1], options, function (err1, val1) {
+          err = err.concat(err1);
+          val.label = val1;
+        });
       } else {
-      	err = err.concat(error("Argument is not a point.", node.elts[0]));
+        err = err.concat(error("Argument is not a point.", node.elts[0]));
       }
       resume([].concat(err), val);
     });
-  }
+  };
   let labeloptions = {
-  	"left": "start",
-  	"start": "start",
-  	"center": "middle",
-  	"middle": "middle",
-  	"end": "end",
-  	"right": "end",
-  	"top": "top",
-  	"bottom": "bottom",
+    "left": "start",
+    "start": "start",
+    "center": "middle",
+    "middle": "middle",
+    "end": "end",
+    "right": "end",
+    "top": "top",
+    "bottom": "bottom",
   };
   function title(node, options, resume){//title text pos map
-  	var ret = {
-  		text: '',
-  		pos: ['', ''],
-  	};
-  	visit(node.elts[1], options, function (err1, val1) {//pos
-  		if(typeof val1 === 'string'){//first word is top, bottom, etc, second is right/left
-  			ret.pos[1] = labeloptions[val1.split(" ")[0]] || "top";
-  			ret.pos[0] = labeloptions[val1.split(" ")[1]] || "middle";
-  		} else {
-  			err1 = err1.concat(error("Argument position is not a valid string.", node.elts[1]));
-  		}
-  		visit(node.elts[2], options, function (err2, val2) {//text
-  			ret.text = ''+val2;
-  			let params = {
-  				op: "default",
-  				prop: "title",
-  				val: ret
-  			};
-  			set(node, options, function (err, val) {//map
-  				resume([].concat(err).concat(err1).concat(err2), val);
-  			}, params);
-  		})
-  	});
-  }
+    var ret = {
+      text: '',
+      pos: ['', ''],
+    };
+    visit(node.elts[1], options, function (err1, val1) {//pos
+      if(typeof val1 === 'string'){//first word is top, bottom, etc, second is right/left
+        ret.pos[1] = labeloptions[val1.split(" ")[0]] || "top";
+        ret.pos[0] = labeloptions[val1.split(" ")[1]] || "middle";
+      } else {
+        err1 = err1.concat(error("Argument position is not a valid string.", node.elts[1]));
+      }
+      visit(node.elts[2], options, function (err2, val2) {//text
+        ret.text = ''+val2;
+        let params = {
+          op: "default",
+          prop: "title",
+          val: ret
+        };
+        set(node, options, function (err, val) {//map
+          resume([].concat(err).concat(err1).concat(err2), val);
+        }, params);
+      })
+    });
+  };
   function position(node, options, resume){//position lat long map
-  	var ret = [];
-  	visit(node.elts[1], options, function (err1, val1) {//longitude
-  		if(!isNaN(val1)){
-  			ret[0] = +val1;
-  		} else {
-  			err1 = err1.concat(error("Argument longitude is not a number.", node.elts[1]))
-  		}
-  		visit(node.elts[2], options, function (err2, val2) {//latitude
-  			if(!isNaN(val2)){
-  				ret[1] = +val2;
-  			} else {
-  				err2 = err2.concat(error("Argument latitude is not a number.", node.elts[2]));
-  			}
-  			let params = {
-  				op: "default",
-  				prop: "center",
-  				val: ret
-  			};
-  			set(node, options, function (err, val) {//map
-  				resume([].concat(err).concat(err1).concat(err2), val);
-  			}, params);
-  		});
-  	});
-  }
+    var ret = [];
+    visit(node.elts[1], options, function (err1, val1) {//longitude
+      if(!isNaN(val1)){
+        ret[0] = +val1;
+      } else {
+        err1 = err1.concat(error("Argument longitude is not a number.", node.elts[1]))
+      }
+      visit(node.elts[2], options, function (err2, val2) {//latitude
+        if(!isNaN(val2)){
+          ret[1] = +val2;
+        } else {
+          err2 = err2.concat(error("Argument latitude is not a number.", node.elts[2]));
+        }
+        let params = {
+          op: "default",
+          prop: "center",
+          val: ret
+        };
+        set(node, options, function (err, val) {//map
+          resume([].concat(err).concat(err1).concat(err2), val);
+        }, params);
+      });
+    });
+  };
   function map(node, options, resume){//takes in projection and map
-  	let ret = {
-  		width: 960,
-  		height: 550,
-  		scale: 153,
-  		color: [{r: 0, g: 0, b: 0}],
-  		bcolor: {r: 255, g: 255, b: 255, a: 100},
-  		bgcolor: {r: 255, g: 255, b: 255},
-  		opacity: 1,
-  		rotation: [0, 0],
-  		style: [{key: "font", val: "16px sans-serif"}],
-  		hl: [],
-  		chl: [],
-  		center: [0, 0],
-  	};
-		visit(node.elts[1], options, function (err1, val1) {//projection
-			switch(val1){
-				case "albers":
-					ret.rotation = [96, 0];
-					ret.center = [0, 60];
-					break;
-	      case "azimuthal equal area":
-	      	ret.height = 960;
-	      	ret.scale = 237;
-	        break;
-	      case "azimuthal equidistant":
-	      	ret.height = 960;
-	      	ret.scale = 150;
-	        break;
-	      case "conic conformal":
-	        break;
-	      case "conic equal area":
-	        break;
-	      case "conic equidistant":
-	      	ret.scale = 128;
-	        break;
-	      case "equirectangular":
-	      	ret.height = 480;
-	        break;
-	      case "gnomonic":
-	      	ret.height = 960;
-	      	ret.scale = 150;
-	        break;
-	      case "mercator":
-	      	ret.height = 960;
-	        break;
-	      case "transverse mercator":
-	      	ret.height = 960;
-	        break;
-	      case "orthographic":
-	      	ret.height = 960;
-	      	ret.scale = 475;
-	        break;
-	      case "stereographic":
-	      	ret.height = 960;
-	      	ret.scale = 245;
-	        break;
-	      default:
-	      	err1 = err1.concat(error("Argument projection is not a valid type.", node.elts[1]));
-	    }
-			ret.projection = val1;
-			visit(node.elts[0], options, function (err, val) {
-				if(typeof val === 'string'){
-					ret.map = val;
-				} else {
-					err = err.concat(error("Argument map is not a valid string.", node.elts[0]));
-				}
-				resume([].concat(err).concat(err1), ret);
-			});
-  	});
-  }
+    let ret = {
+      scale: 153,
+      color: [{r: 0, g: 0, b: 0}],
+      bcolor: {r: 255, g: 255, b: 255, a: 100},
+      bgcolor: {r: 255, g: 255, b: 255},
+      opacity: 1,
+      rotation: [0, 0],
+      style: [{key: "font", val: "16px sans-serif"}],
+      hl: [],
+      chl: [],
+      center: [0, 0],
+    };
+    visit(node.elts[1], options, function (err1, val1) {//projection
+      switch(val1){
+        case "albers":
+          ret.rotation = [96, 0];
+          ret.center = [0, 60];
+          break;
+        case "azimuthal equal area":
+          ret.scale = 237;
+          break;
+        case "azimuthal equidistant":
+          ret.scale = 150;
+          break;
+        case "conic conformal":
+          break;
+        case "conic equal area":
+          break;
+        case "conic equidistant":
+          ret.scale = 128;
+          break;
+        case "equirectangular":
+          break;
+        case "gnomonic":
+          ret.scale = 150;
+          break;
+        case "mercator":
+          break;
+        case "transverse mercator":
+          break;
+        case "orthographic":
+          ret.scale = 475;
+          break;
+        case "stereographic":
+          ret.scale = 245;
+          break;
+        default:
+          err1 = err1.concat(error("Argument projection is not a valid type.", node.elts[1]));
+      }
+      ret.projection = val1;
+      visit(node.elts[0], options, function (err, val) {
+        if(maplist[val]){
+          ret.map = val;
+        } else {
+          err = err.concat(error("Argument map is not a valid string.", node.elts[0]));
+        }
+        resume([].concat(err).concat(err1), ret);
+      });
+    });
+  };
+  let maplist = {
+    "./data/world.json": true,
+    "./data/world-50m.json": true,
+  };
   function zoom(node, options, resume) {//0 = map, 1 = max, 2 = min --- zoom min max map
-  	visit(node.elts[1], options, function (err1, val1) {//max
-  		if(!isNaN(val1) && +val1 > 0){
-  			val1 = +val1;
-  		} else {
-  			err1 = err1.concat(error("Argument max is not a positive number.", node.elts[1]))
-  		}
-  		visit(node.elts[2], options, function (err2, val2) {//min
-  			if(!isNaN(val2) && +val2 > 0){
-  				val2 = +val2;
-  			} else if(val2 > val1){
-  				err2 = err2.concat(error("Argument min is larger than max.", node.elts[2]));
-  			} else {
-  				err2 = err2.concat(error("Argument min is not a positive number.", node.elts[2]));
-  			}
-  			let params = {
-  				op: "default",
-  				prop: "zoom",
-  				val: [val2, val1]
-  			};
-  			set(node, options, function (err, val) {//map
-  				resume([].concat(err).concat(err1).concat(err2), val);
-  			}, params);
-  		});
-  	});
+    visit(node.elts[1], options, function (err1, val1) {//max
+      if(!isNaN(val1) && +val1 > 0){
+        val1 = +val1;
+      } else {
+        err1 = err1.concat(error("Argument max is not a positive number.", node.elts[1]))
+      }
+      visit(node.elts[2], options, function (err2, val2) {//min
+        if(!isNaN(val2) && +val2 > 0){
+          val2 = +val2;
+        } else if(val2 > val1){
+          err2 = err2.concat(error("Argument min is larger than max.", node.elts[2]));
+        } else {
+          err2 = err2.concat(error("Argument min is not a positive number.", node.elts[2]));
+        }
+        let params = {
+          op: "default",
+          prop: "zoom",
+          val: [val2, val1]
+        };
+        set(node, options, function (err, val) {//map
+          resume([].concat(err).concat(err1).concat(err2), val);
+        }, params);
+      });
+    });
   };
   function colorcheck(val){
-  	var ret = {};
-  	if(typeof val === "string" && /^#[0-9A-F]{6}$/i.test(val)){//valid hex string.
-  		var temp = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(val);
-  		ret = {
-  			r: parseInt(temp[1], 16),
-  			g: parseInt(temp[2], 16),
-  			b: parseInt(temp[3], 16),
-  		};
-  	} else if(!isNaN(val.r) && !isNaN(val.g) && !isNaN(val.b)){
-  		ret = val;
-  	} else {
-  		ret.err = "Please provide a valid color";
-  	}
-  	return ret;
-  }
+    var ret = {};
+    if(typeof val === "string" && /^#[0-9A-F]{6}$/i.test(val)){//valid hex string.
+      var temp = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(val);
+      ret = {
+        r: parseInt(temp[1], 16),
+        g: parseInt(temp[2], 16),
+        b: parseInt(temp[3], 16),
+      };
+    } else if(!isNaN(val.r) && !isNaN(val.g) && !isNaN(val.b)){
+      ret = val;
+    } else {
+      ret.err = "Please provide a valid color";
+    }
+    return ret;
+  };
   function fill(node, options, resume) {//color or array thereof
-  	var ret = [];
-  	visit(node.elts[1], options, function (err2, val2) {
-  		if(!(val2 instanceof Array)){
-  			var temp = colorcheck(val2);
-  			if(temp.err && temp.err.length){
-  				err2 = err2.concat(error(temp.err + '.', node.elts[1]));
-  			}
-  			ret = ret.concat(temp);
-  		} else {
-  			val2.forEach(function (element, index) {
-  				temp = colorcheck(element);
-  				if(temp.err && temp.err.length){
-  					err2 = err2.concat(error(temp.err+" at index "+index+'.', node.elts[1]));
-  				}
-  				ret = ret.concat(temp);
-  			});
-  		}
-  		let params = {
-  			op: "default",
-  			prop: "color",
-  			val: ret
-  		};
-  		set(node, options, function (err1, val1) {
-  			resume([].concat(err1).concat(err2), val1);
-  		}, params);
-  	});
-  }
+    var ret = [];
+    visit(node.elts[1], options, function (err2, val2) {
+      if(!(val2 instanceof Array)){
+        var temp = colorcheck(val2);
+        if(temp.err && temp.err.length){
+          err2 = err2.concat(error(temp.err + '.', node.elts[1]));
+        }
+        ret = ret.concat(temp);
+      } else {
+        val2.forEach(function (element, index) {
+          temp = colorcheck(element);
+          if(temp.err && temp.err.length){
+            err2 = err2.concat(error(temp.err+" at index "+index+'.', node.elts[1]));
+          }
+          ret = ret.concat(temp);
+        });
+      }
+      let params = {
+        op: "default",
+        prop: "color",
+        val: ret
+      };
+      set(node, options, function (err1, val1) {
+        resume([].concat(err1).concat(err2), val1);
+      }, params);
+    });
+  };
   function highlight(node, options, resume){//0 = map, 1 = pairs
-  	var ret = [];
-  	visit(node.elts[1], options, function (err1, val1) {//[[id, color], [id, color]]
-  		if(!(val1 instanceof Array)){
-  			err1 = err1.concat(error("Argument must be an array.", node.elts[1]));
-  		}
-  		val1.forEach(function (element, index){
-  			if(isNaN(element[0]) || element[0] < 0){
-  				err1 = err1.concat(error("Index "+index+" contains an invalid id.", node.elts[1]));
-  			} else {
-  				ret[element[0]] = colorcheck(element[1]);
-					if(ret[element[0]].err && ret[element[0]].err.length){
-						err1 = err1.concat(error(ret[element[0]].err+" at index "+index+'.', node.elts[1]));
-					}
-  			}
-  		});
-			let params = {
-				op: "default",
-				prop: "hl",
-				val: ret
-			};
-  		set(node, options, function (err, val) {
-  			resume([].concat(err).concat(err1), val);
-  		}, params);
-  	});
-  }
+    var ret = [];
+    visit(node.elts[1], options, function (err1, val1) {//[[id, color], [id, color]]
+      if(!(val1 instanceof Array)){
+        err1 = err1.concat(error("Argument must be an array.", node.elts[1]));
+      }
+      val1.forEach(function (element, index){
+        if(isNaN(element[0]) || element[0] < 0){
+          err1 = err1.concat(error("Index "+index+" contains an invalid id.", node.elts[1]));
+        } else {
+          ret[element[0]] = colorcheck(element[1]);
+          if(ret[element[0]].err && ret[element[0]].err.length){
+            err1 = err1.concat(error(ret[element[0]].err+" at index "+index+'.', node.elts[1]));
+          }
+        }
+      });
+      let params = {
+        op: "default",
+        prop: "hl",
+        val: ret
+      };
+      set(node, options, function (err, val) {
+        resume([].concat(err).concat(err1), val);
+      }, params);
+    });
+  };
   function chighlight(node, options, resume){//0 = map, 1 = pairs
-  	var ret = [];
-  	visit(node.elts[1], options, function (err1, val1) {//[[id, color], [id, color]]
-  		if(!(val1 instanceof Array)){
-  			err1 = err1.concat(error("Argument must be an array.", node.elts[1]));
-  		}
-  		val1.forEach(function (element, index){
-  			if(element[0] === '_'){element[0] = 0;}
-  			if(isNaN(element[0]) || element[0] < 0){
-  				err1 = err1.concat(error("Index "+index+" contains an invalid id.", node.elts[1]));
-  			} else {
-  				ret[element[0]] = colorcheck(element[1]);
-					if(ret[element[0]].err && ret[element[0]].err.length){
-						err1 = err1.concat(error(ret[element[0]].err+" at index "+index+'.', node.elts[1]));
-					}
-  			}
-  		});
-			let params = {
-				op: "default",
-				prop: "chl",
-				val: ret
-			};
-  		set(node, options, function (err, val) {
-  			resume([].concat(err).concat(err1), val);
-  		}, params);
-  	});
-  }
+    var ret = [];
+    visit(node.elts[1], options, function (err1, val1) {//[[id, color], [id, color]]
+      if(!(val1 instanceof Array)){
+        err1 = err1.concat(error("Argument must be an array.", node.elts[1]));
+      }
+      val1.forEach(function (element, index){
+        if(element[0] === '_'){element[0] = 0;}
+        if(isNaN(element[0]) || element[0] < 0){
+          err1 = err1.concat(error("Index "+index+" contains an invalid id.", node.elts[1]));
+        } else {
+          ret[element[0]] = colorcheck(element[1]);
+          if(ret[element[0]].err && ret[element[0]].err.length){
+            err1 = err1.concat(error(ret[element[0]].err+" at index "+index+'.', node.elts[1]));
+          }
+        }
+      });
+      let params = {
+        op: "default",
+        prop: "chl",
+        val: ret
+      };
+      set(node, options, function (err, val) {
+        resume([].concat(err).concat(err1), val);
+      }, params);
+    });
+  };
   function border(node, options, resume) {
-  	visit(node.elts[1], options, function (err2, val2) {
-  		var ret = colorcheck(val2);
-  		if(ret.err && ret.err.length){
-  			err2 = err2.concat(error(ret.err+'.', node.elts[1]));
-  		}
-  		if(isNaN(ret.a)){ret.a=1;}
-  		let params = {
-  			op: "default",
-  			prop: "bcolor",
-  			val: ret
-  		};
-  		set(node, options, function (err1, val1) {
-  			resume([].concat(err1).concat(err2), val1);
-  		}, params);
-  	});
-  }
+    visit(node.elts[1], options, function (err2, val2) {
+      var ret = colorcheck(val2);
+      if(ret.err && ret.err.length){
+        err2 = err2.concat(error(ret.err+'.', node.elts[1]));
+      }
+      if(isNaN(ret.a)){ret.a=1;}
+      let params = {
+        op: "default",
+        prop: "bcolor",
+        val: ret
+      };
+      set(node, options, function (err1, val1) {
+        resume([].concat(err1).concat(err2), val1);
+      }, params);
+    });
+  };
   function background(node, options, resume) {
-  	visit(node.elts[1], options, function (err2, val2) {
-  		var ret = colorcheck(val2);
-  		if(ret.err && ret.err.length){
-  			err2 = err2.concat(error(ret.err+'.', node.elts[1]));
-  		}
-  		if(isNaN(ret.a)){ret.a=1;}
-  		let params = {
-  			op: "default",
-  			prop: "bgcolor",
-  			val: ret
-  		};
-  		set(node, options, function (err1, val1) {
-  			resume([].concat(err1).concat(err2), val1);
-  		}, params);
-  	});
-  }
+    visit(node.elts[1], options, function (err2, val2) {
+      var ret = colorcheck(val2);
+      if(ret.err && ret.err.length){
+        err2 = err2.concat(error(ret.err+'.', node.elts[1]));
+      }
+      if(isNaN(ret.a)){ret.a=1;}
+      let params = {
+        op: "default",
+        prop: "bgcolor",
+        val: ret
+      };
+      set(node, options, function (err1, val1) {
+        resume([].concat(err1).concat(err2), val1);
+      }, params);
+    });
+  };
   function opacity(node, options, resume) {
-  	visit(node.elts[1], options, function (err2, val2) {
-  		if(isNaN(val2) || val2 < 0){
-  			err2 = err2.concat(error("Alpha must be a positive number.", node.elts[1]));
-  		} else {
-  			val2 = +val2;
-  			if(val2 > 1 && val2 < 100){
-  				val2 = val2/100;
-  			} else if (val2 > 100){
-  				val2 = 1;
-  			}
-  		}
-  		let params = {
-  			op: "default",
-  			prop: "opacity",
-  			val: val2
-  		};
-  		set(node, options, function (err1, val1) {
-  			resume([].concat(err1).concat(err2), val1);
-  		}, params);
-  	});
-  }
+    visit(node.elts[1], options, function (err2, val2) {
+      if(isNaN(val2) || val2 < 0){
+        err2 = err2.concat(error("Alpha must be a positive number.", node.elts[1]));
+      } else {
+        val2 = +val2;
+        if(val2 > 1 && val2 < 100){
+          val2 = val2/100;
+        } else if (val2 > 100){
+          val2 = 1;
+        }
+      }
+      let params = {
+        op: "default",
+        prop: "opacity",
+        val: val2
+      };
+      set(node, options, function (err1, val1) {
+        resume([].concat(err1).concat(err2), val1);
+      }, params);
+    });
+  };
   let colors = {
     "yellow green" : 'YlGn',
     "yellow green blue" : 'YlGnBu',
@@ -988,31 +982,31 @@ let translate = (function() {
       }
       resume([].concat(err), ret);//finds the right name and then grabs the colorbrewer array
     });
-  }
+  };
   function rgba(node, options, resume){
-  	visit(node.elts[0], options, function (err1, val1) {//a
-  		if(isNaN(val1) || val1 < 0){
-  			err1 = err1.concat(error("Alpha must be a positive number.", node.elts[0]));
-  		} else {
+    visit(node.elts[0], options, function (err1, val1) {//a
+      if(isNaN(val1) || val1 < 0){
+        err1 = err1.concat(error("Alpha must be a positive number.", node.elts[0]));
+      } else {
         if(val1 > 1 && val1 < 100){
           val1 = val1/100;
         } else if (val1 > 100){
           val1 = 1;
         }
-  		}
-  		let test = node.elts.shift();
-  		rgb(node, options, function(err2, val2) {//run rgb, add alpha
-  			val2.a = val1
-  			node.elts.unshift(test);
-  			resume([].concat(err1).concat(err2), val2);
-  		});
-  	});
-  }
+      }
+      let test = node.elts.shift();
+      rgb(node, options, function(err2, val2) {//run rgb, add alpha
+        val2.a = val1
+        node.elts.unshift(test);
+        resume([].concat(err1).concat(err2), val2);
+      });
+    });
+  };
   function rgb(node, options, resume){
     let ret = {
-    	r: 0,
-    	g: 0,
-    	b: 0,
+      r: 0,
+      g: 0,
+      b: 0,
     };
     visit(node.elts[0], options, function (err1, val1) {//b
       if(isNaN(val1) || val1 < 0 || +val1 > 255){
@@ -1033,7 +1027,7 @@ let translate = (function() {
         });
       });
     });
-  }
+  };
   function style(node, options, resume) {
     visit(node.elts[1], options, function (err2, val2) {
       let params = {
@@ -1071,7 +1065,7 @@ let translate = (function() {
       options = {};
     }
     visit(node.elts[0], options, resume);
-  }
+  };
   let table = {
     "PROG" : program,
     "EXPRS" : exprs,
@@ -1109,7 +1103,7 @@ let translate = (function() {
     "CHIGHLIGHT": chighlight,
     "POSITION": position,
     "TITLE": title,
-  }
+  };
   return translate;
 })();
 let render = (function() {
@@ -1121,11 +1115,11 @@ let render = (function() {
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;");
-  }
+  };
   function render(val, resume) {
     // Do some rendering here.
     resume([], val);
-  }
+  };
   return render;
 })();
 export let compiler = (function () {
@@ -1136,7 +1130,7 @@ export let compiler = (function () {
       translate(pool, function (err, val) {
         console.log("translate err=" + JSON.stringify(err, null, 2) + "\nval=" + JSON.stringify(val, null, 2));
         if (err.length) {
-        	console.log(err);
+          console.log(err);
           resume(err, val);
         } else {
           render(val, function (err, val) {
