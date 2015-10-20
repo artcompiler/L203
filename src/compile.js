@@ -302,8 +302,8 @@ var colorbrewer = {YlGn: {
 11: ["#8dd3c7","#ffffb3","#bebada","#fb8072","#80b1d3","#fdb462","#b3de69","#fccde5","#d9d9d9","#bc80bd","#ccebc5"],
 12: ["#8dd3c7","#ffffb3","#bebada","#fb8072","#80b1d3","#fdb462","#b3de69","#fccde5","#d9d9d9","#bc80bd","#ccebc5","#ffed6f"]
 }};
-//var http = require('http');
-//var topojson = require('topojson');
+var https = require('https');
+var http = require('http');
 import {assert, message, messages, reserveCodeRange} from "./assert.js"
 
 reserveCodeRange(1000, 1999, "compile");
@@ -749,18 +749,41 @@ let translate = (function() {
       }
       ret.projection = val1;
       visit(node.elts[0], options, function (err, val) {
-        if(maplist[val]){
+        if(typeof val === "string"){
           ret.map = val;
+        } else if(val.tree){
+          ret.tree = val.tree;
         } else {
-          err = err.concat(error("Argument map is not a valid string.", node.elts[0]));
+          err = err.concat(error("Argument map is not a valid string."+val.tree, node.elts[0]));
         }
         resume([].concat(err).concat(err1), ret);
       });
     });
   };
-  let maplist = {
-    "./data/world.json": true,
-    "./data/world-50m.json": true,
+  function get(node, options, resume){//takes in URL for map
+    visit(node.elts[0], options, function (err, val) {
+      if(typeof val !== "string" || val.indexOf("http") < 0){//if there's no http or https we can't check protocol, right?
+        err = err.concat(error("Argument is not a valid URL.", node.elts[0]));
+        resume([].concat(err), val);
+      } else {
+        let protocol;
+        protocol = (val.indexOf("https") >= 0) ? https : http;
+        protocol.get(val, function(res) {
+          var obj = '';
+
+          res.on('data', function(d) {
+            obj += d;
+          });
+
+          res.on('end', function() {
+            resume([].concat(err), {tree: obj});
+          });
+        }).on('error', function(e) {
+          err = err.concat(error("Attempt to get data returned" + e, node.elts[0]));
+          resume([].concat(err), val);
+        });
+      }
+    });
   };
   function zoom(node, options, resume) {//0 = map, 1 = max, 2 = min --- zoom min max map
     visit(node.elts[1], options, function (err1, val1) {//max
@@ -1083,6 +1106,7 @@ let translate = (function() {
     "SCALE" : scale,
     "PARALLELS" : parallels,
     "MAP" : map,
+    "GET" : get,
     "FILL" : fill,
     "BORDER" : border,
     "BACKGROUND" : background,

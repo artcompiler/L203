@@ -23,6 +23,7 @@ exports.globalLexicon = {
     "rgba" : { "tk": 0x01, "name": "RGBA", "cls": "function", "length": 4, "arity": 4},
     "brewer" : { "tk": 0x01, "name": "BREWER", "cls": "function", "length": 1, "arity": 1},    
     "map" : { "tk": 0x01, "name": "MAP", "cls": "function", "length": 2, "arity": 2},
+    "get" : { "tk": 0x01, "name": "GET", "cls": "function", "length": 1, "arity": 1},
     "position" : { "tk": 0x01, "name": "POSITION", "cls": "function", "length": 3, "arity": 3},
     "limit" : { "tk": 0x01, "name": "LIMIT", "cls": "function", "length": 3, "arity": 3},
     "zoom" : { "tk": 0x01, "name": "ZOOM", "cls": "function", "length": 3, "arity": 3},

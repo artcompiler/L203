@@ -788,7 +788,6 @@ window.exports.viewer = (function () {
       });
     }
     g.append("path").datum(graticule).attr("class", "graticule").attr("d", path).style("fill-opacity", 0).style("stroke", "#777").style("stroke-width", 0.5 + "px").style("stroke-opacity", 0.5);
-    var filepath = graphs.map;
     if (graphs.zoom) {
       var zoomed = function zoomed() {
         g.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
@@ -806,9 +805,10 @@ window.exports.viewer = (function () {
     }
     var cur = null;
     var prev = null;
-    d3.json(filepath, function (error, world) {
-      if (error) console.log("Didn't work: " + error);
-      var dat = world.objects.states || world.objects.countries;
+
+    function draw(error, world) {
+      if (error && error.length > 0) console.log("Didn't work: " + error);
+      var dat = world.objects[Object.keys(world.objects)[0]];
       var feat = topojson.feature(world, dat);
       function coordcheck(elt, index) {
         //finds all the coordinate pairs in the mess of arrays.
@@ -894,7 +894,13 @@ window.exports.viewer = (function () {
           return d.label;
         }).style("text-anchor", "middle").style("font", "11px sans-serif");
       }
-    });
+    };
+    if (graphs.map) {
+      d3.json(graphs.map, draw);
+    } else if (graphs.tree) {
+      var parsedmap = JSON.parse(graphs.tree);
+      draw(parsedmap.error, parsedmap);
+    }
   }
   function capture(el) {
     var mySVG = $(el).html();
