@@ -377,7 +377,7 @@ let translate = (function() {
           resume([].concat(err), val);
         } else if(params.op && params.op === "positive"){
           visit(node.elts[1], options, function (err2, val2) {
-            if(isNaN(val2) || val2 < 0){
+            if(isNaN(val2) || val2 <= 0){
               err2 = err2.concat(error("Argument must be a positive number.", node.elts[1]));
             }
             if(typeof val === "object" && val){
@@ -461,9 +461,13 @@ let translate = (function() {
         } else {
           err1 = err1.concat(error("Argument pitch is not a number.", node.elts[1]));
         }
-        if(!isNaN(val1[2])){
-          ret = ret.concat(+val1[2]);
-        } //roll is optional, so no error.
+        if(val1[2]){//if it's zero as opposed to null we still aren't doing any harm by skipping it.
+          if(!isNaN(val1[2])){// if there IS something given for roll it better be a number.
+            ret = ret.concat(+val1[2]);
+          } else {
+            err1 = err1.concat(error("Argument roll is not a number.", node.elts[1]))
+          }
+        }//roll is optional, so no error if missing
       } else {
         err1 = err1.concat(error("Argument must be an array with at least two values.", node.elts[1]));
       }
@@ -795,10 +799,11 @@ let translate = (function() {
       visit(node.elts[2], options, function (err2, val2) {//min
         if(!isNaN(val2) && +val2 > 0){
           val2 = +val2;
-        } else if(val2 > val1){
-          err2 = err2.concat(error("Argument min is larger than max.", node.elts[2]));
         } else {
           err2 = err2.concat(error("Argument min is not a positive number.", node.elts[2]));
+        }
+        if(val2 > val1){
+          err2 = err2.concat(error("Argument min is larger than max.", node.elts[2]));
         }
         let params = {
           op: "default",
@@ -991,6 +996,10 @@ let translate = (function() {
     "red grey" : 'RdGy',
     "red yellow blue" : 'RdYlBu',
     "red yellow green" : 'RdYlGn',
+    "spectral" : 'Spectral',
+    "dark" : 'Dark2',
+    "pastel" : 'Pastel1',
+    "accent" : 'Accent',
   };
   function brewer(node, options, resume) {//takes in color string, outputs array
     let ret = 0;
