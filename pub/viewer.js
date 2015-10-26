@@ -763,12 +763,12 @@ window.exports.viewer = (function () {
     if (graphs.title) {
       var theight = 0;
       var twidth = 0;
-      svgd.append("text").text(graphs.title.text).style("text-anchor", graphs.title.pos[0]).call(styles, graphs.style).each(function () {
+      svgd.append("text").text(graphs.title.text).style("text-anchor", graphs.title.pos[1]).call(styles, graphs.style).each(function () {
         var b = this.getBBox();
         theight = b.height;
         twidth = b.width;
       }).attr("x", function () {
-        switch (graphs.title.pos[0]) {
+        switch (graphs.title.pos[1]) {
           case "start":
             return 0;
           case "middle":
@@ -777,7 +777,7 @@ window.exports.viewer = (function () {
             return graphs.width;
         }
       }).attr("y", function () {
-        switch (graphs.title.pos[1]) {
+        switch (graphs.title.pos[0]) {
           case "top":
             return theight;
           case "middle":
@@ -855,6 +855,8 @@ window.exports.viewer = (function () {
         var linegroup = g.append("g");
         linegroup.selectAll("g").data(graphs.lines).enter().append("path").attr("class", "route").attr("d", path).style("fill", "none").style("stroke", function (d) {
           return "rgb(" + d.color.r + "," + d.color.g + "," + d.color.b + ")";
+        }).style("stroke-opacity", function (d) {
+          return isNaN(d.color.a) ? 1 : d.color.a;
         }).style("stroke-width", function (d) {
           return d.size + "px";
         });
@@ -869,6 +871,9 @@ window.exports.viewer = (function () {
           }).style("stroke", function (d, i) {
             var c = element.pointcolor[i];
             return "rgb(" + c.r + "," + c.g + "," + c.b + ")";
+          }).style("opacity", function (d, i) {
+            var a = isNaN(element.pointcolor[i].a) ? 1 : element.pointcolor[i].a;
+            return a;
           }).style("stroke-width", "2px");
           linegroup.selectAll("g").data(element.coordinates).enter().append("text").attr("class", "text").attr("transform", function (d) {
             return "translate(" + projection(d) + ")";
@@ -887,6 +892,8 @@ window.exports.viewer = (function () {
           return "rgb(" + d.color.r + "," + d.color.g + "," + d.color.b + ")";
         }).style("stroke", function (d) {
           return "rgb(" + d.color.r + "," + d.color.g + "," + d.color.b + ")";
+        }).style("opacity", function (d) {
+          return isNaN(d.color.a) ? 1 : d.color.a;
         }).style("stroke-width", "2px");
         pointgroup.selectAll("g").data(graphs.points).enter().append("text").attr("class", "text").attr("transform", function (d) {
           return "translate(" + projection([d.lon, d.lat]) + ")";

@@ -371,6 +371,7 @@ let translate = (function() {
     visit(node.elts[0], options, function (err, val) {
       if(typeof val !== "object" || !val || !val.scale){
         err = err.concat(error("Argument Map invalid.", node.elts[0]));
+        resume([].concat(err), val);
       } else {
         if(params.op && params.op === "default"){
           val[params.prop] = params.val;
@@ -641,15 +642,25 @@ let translate = (function() {
       resume([].concat(err), val);
     });
   };
-  let labeloptions = {
-    "left": "start",
-    "start": "start",
-    "center": "middle",
-    "middle": "middle",
-    "end": "end",
-    "right": "end",
-    "top": "top",
-    "bottom": "bottom",
+  let labeloptions = {//second word is x, first is y
+    "left": "middle start",
+    "top left": "top start",
+    "center left": "middle start",
+    "middle left": "middle start",
+    "top": "top middle",
+    "top middle": "top middle",
+    "top center": "top middle",
+    "right": "middle end",
+    "center right": "middle end",
+    "middle right": "middle end",
+    "top right": "top end",
+    "bottom": "bottom middle",
+    "bottom middle": "bottom middle",
+    "bottom center": "bottom middle",
+    "bottom right": "bottom end",
+    "bottom left": "bottom start",
+    "center": "middle middle",
+    "middle": "middle middle",
   };
   function title(node, options, resume){//title text pos map
     var ret = {
@@ -657,9 +668,8 @@ let translate = (function() {
       pos: ['', ''],
     };
     visit(node.elts[1], options, function (err1, val1) {//pos
-      if(typeof val1 === 'string'){//first word is top, bottom, etc, second is right/left
-        ret.pos[1] = labeloptions[val1.split(" ")[0]] || "top";
-        ret.pos[0] = labeloptions[val1.split(" ")[1]] || "middle";
+      if(typeof val1 === 'string' && labeloptions[val1]){//first word is top, bottom, etc, second is right/left
+        ret.pos = labeloptions[val1].split(" ");
       } else {
         err1 = err1.concat(error("Argument position is not a valid string.", node.elts[1]));
       }
