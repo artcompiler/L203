@@ -1,4 +1,423 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+/* -*- Mode: js; js-indent-level: 2; indent-tabs-mode: nil; tab-width: 2 -*- */
+/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
+/*
+ * Copyright 2013 Art Compiler LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+"use strict"
+/*
+  ASSERTS AND MESSAGES
+
+  We use the 'assert()' function to trap invalid states of all kinds. External
+  messages are distinguished from internal messages by a numeric prefix that
+  indicates the error code associated with the message. For example, the
+  following two asserts implement an internal and external assert, respectively.
+
+     assert(false, "This code is broken.");
+     assert(false, "1001: Invalid user input.");
+
+  To aid in the writing of external messages, we keep them in a single global
+  table named 'messages'. Each module adds to this table its own messages
+  with an expression such as
+
+     messages[1001] = "Invalid user input.";
+
+  These messages are accessed with the 'message' function as such
+
+     message(1001);
+
+  Calling 'assert' with 'message' looks like
+
+     assert(x != y, message(1001));
+
+  ALLOCATING ERROR CODES
+
+  In order to avoid error code conflicts, each module claims a range of values
+  that is not already taken by the modules in the same system. A module claims
+  a range of codes by calling the function reserveCodeRange() like this:
+
+     reserveCodeRange(1000, 1999, "mymodule");
+
+  If the requested code range has any values that are already reserved, then
+  an assertion is raised.
+
+  USAGE
+
+  In general, only allocate message codes for external asserts. For internal
+  asserts, it is sufficient to simply inline the message text in the assert
+  expression.
+
+  It is good to write an assert for every undefined state, regardless of whether
+  it is the result of external input or not. Asserts can then be externalized if
+  and when they it is clear that they are the result of external input.
+
+  A client module can override the messages provided by the libraries it uses by
+  simply redefining those messages after the defining library is loaded. That is,
+  the client can copy and past the statements of the form
+
+     messages[1001] = "Invalid user input.";
+
+  and provide new text for the message.
+
+     messages[1001] = "Syntax error.";
+
+  In the same way different sets of messages can be overridden for the purpose
+  of localization.
+
+*/
+
+;
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+var location = "";
+var messages = {};
+var reservedCodes = [];
+var ASSERT = true;
+var assert = (function () {
+  return !ASSERT ? function () {} : function (val, str) {
+    if (str === void 0) {
+      str = "failed!";
+    }
+    if (!val) {
+      var err = new Error(str);
+      err.location = location;
+      throw err;
+    }
+  };
+})();
+
+var message = function message(errorCode, args) {
+  var str = messages[errorCode];
+  if (args) {
+    args.forEach(function (arg, i) {
+      str = str.replace("%" + (i + 1), arg);
+    });
+  }
+  return errorCode + ": " + str;
+};
+
+var reserveCodeRange = function reserveCodeRange(first, last, moduleName) {
+  assert(first <= last, "Invalid code range");
+  var noConflict = reservedCodes.every(function (range) {
+    return last < range.first || first > range.last;
+  });
+  assert(noConflict, "Conflicting request for error code range");
+  reservedCodes.push({ first: first, last: last, name: moduleName });
+};
+
+var setLocation = function setLocation(location) {
+  //assert(location, "Empty location");
+  location = loc;
+};
+
+var clearLocation = function clearLocation() {
+  location = null;
+};
+
+var setCounter = function setCounter(n, message) {
+  count = n;
+  countMessage = message ? message : "ERROR count exceeded";
+};
+
+var checkCounter = function checkCounter() {
+  if (typeof count !== "number" || isNaN(count)) {
+    assert(false, "ERROR counter not set");
+    return;
+  }
+  assert(count--, countMessage);
+};
+
+exports.assert = assert;
+exports.message = message;
+exports.messages = messages;
+exports.reserveCodeRange = reserveCodeRange;
+
+},{}],2:[function(require,module,exports){
+/* -*- Mode: js; js-indent-level: 2; indent-tabs-mode: nil; tab-width: 2 -*- */
+/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
+/* Copyright (c) 2015, Jeff Dyer, Art Compiler LLC */
+// This product includes color specifications and designs developed by Cynthia Brewer (http://colorbrewer.org/).
+"use strict";
+
+function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.constructor === Symbol ? "symbol" : typeof obj; }
+
+function _interopRequireWildcard(obj) {
+  if (obj && obj.__esModule) {
+    return obj;
+  } else {
+    var newObj = {};if (obj != null) {
+      for (var key in obj) {
+        if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key];
+      }
+    }newObj["default"] = obj;return newObj;
+  }
+}
+
+var _assert = require("./assert");
+
+var _topojson = require("topojson");
+
+var topojson = _interopRequireWildcard(_topojson);
+
+//import * as http from "http";
+
+window.exports.viewer = (function () {
+  function update(el, obj, src, pool) {
+    obj = JSON.parse(obj);
+    var str;
+    var graphs = null; //array of graph objects, rather than a single object full of arrays.
+    //in this case I can do this because icicle makes sure all parameters have defaults.
+    if (obj.error && obj.error.length > 0) {
+      str = "ERROR";
+    } else {
+      if (!(obj.data instanceof Array)) {
+        obj.data = [obj.data];
+      } //edge case for a single object because the parser likes to unwrap arrays.
+    }
+    obj.data.forEach(function (element, index, array) {
+      if ((typeof element === "undefined" ? "undefined" : _typeof(element)) === "object" && element.projection) {
+        graphs = element;
+      }
+    });
+    if (!graphs.height) {
+      graphs.height = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
+      graphs.height -= 100;
+    }
+    if (!graphs.width) {
+      graphs.width = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
+      graphs.width -= 20;
+    }
+    //partition looks for children arrays starting from root and positions and scales based on number of children and their values.
+    var svgd = d3.select(el);
+    svgd.selectAll("path").remove(); //clear each time
+    svgd.selectAll("g").remove();
+    svgd.selectAll("text").remove();
+    function styles(selection, these) {
+      these.forEach(function (p) {
+        selection.style(p.key, p.val);
+      });
+    }
+    var color = d3.scale.ordinal().range(graphs.color);
+    var projection = null;
+    switch (graphs.projection) {
+      case "albers":
+        projection = d3.geo.albers();
+        break;
+      case "azimuthal equal area":
+        projection = d3.geo.azimuthalEqualArea().clipAngle(180 - 1e-3);
+        break;
+      case "azimuthal equidistant":
+        projection = d3.geo.azimuthalEquidistant().clipAngle(180 - 1e-3);
+        break;
+      case "conic conformal":
+        projection = d3.geo.conicConformal();
+        break;
+      case "conic equal area":
+        projection = d3.geo.conicEqualArea();
+        break;
+      case "conic equidistant":
+        projection = d3.geo.conicEquidistant();
+        break;
+      case "equirectangular":
+        projection = d3.geo.equirectangular();
+        break;
+      case "gnomonic":
+        projection = d3.geo.gnomonic().clipAngle(90 - 1e-3);
+        break;
+      case "mercator":
+        projection = d3.geo.mercator();
+        break;
+      case "transverse mercator":
+        projection = d3.geo.transverseMercator();
+        break;
+      case "orthographic":
+        projection = d3.geo.orthographic().clipAngle(90);
+        break;
+      case "stereographic":
+        projection = d3.geo.stereographic().clipAngle(180 - 1e-4).clipExtent([[0, 0], [graphs.width, graphs.height]]);
+        break;
+    }
+    projection.center(graphs.center).scale(graphs.scale).translate([graphs.width / 2, graphs.height / 2]).rotate(graphs.rotation);
+    if (graphs.parallels) {
+      projection.parallels(graphs.parallels);
+    }
+    var path = d3.geo.path().projection(projection);
+    var graticule = d3.geo.graticule();
+    svgd.attr("width", graphs.width).attr("height", graphs.height).style("background-color", "rgb(" + graphs.bgcolor.r + "," + graphs.bgcolor.g + "," + graphs.bgcolor.b + ")");
+    var g = svgd.append("g");
+    if (graphs.title) {
+      var theight = 0;
+      var twidth = 0;
+      svgd.append("text").text(graphs.title.text).style("text-anchor", graphs.title.pos[1]).call(styles, graphs.style).each(function () {
+        var b = this.getBBox();
+        theight = b.height;
+        twidth = b.width;
+      }).attr("x", function () {
+        switch (graphs.title.pos[1]) {
+          case "start":
+            return 0;
+          case "middle":
+            return graphs.width / 2;
+          case "end":
+            return graphs.width;
+        }
+      }).attr("y", function () {
+        switch (graphs.title.pos[0]) {
+          case "top":
+            return theight;
+          case "middle":
+            return (graphs.height + theight) / 2;
+          case "bottom":
+            return graphs.height;
+        }
+      });
+    }
+    g.append("path").datum(graticule).attr("class", "graticule").attr("d", path).style("fill-opacity", 0).style("stroke", "#777").style("stroke-width", 0.5 + "px").style("stroke-opacity", 0.5);
+    if (graphs.zoom) {
+      var zoomed = function zoomed() {
+        g.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+        svgd.selectAll(".points").attr("r", function (d) {
+          return d.size / d3.event.scale;
+        }).style("stroke-width", 2 / d3.event.scale + "px");
+        svgd.selectAll(".route").style("stroke-width", function (d) {
+          return d.size / d3.event.scale + "px";
+        });
+        svgd.selectAll(".text").attr("y", 10 / d3.event.scale).style("font", 11 / d3.event.scale + "px sans-serif");
+      };
+
+      var zoom = d3.behavior.zoom().scaleExtent(graphs.zoom).on("zoom", zoomed);
+      svgd.call(zoom).call(zoom.event);
+    }
+    var cur = null;
+    var prev = null;
+
+    function draw(error, world) {
+      if (error && error.length > 0) console.log("Didn't work: " + error);
+      var dat = world.objects[Object.keys(world.objects)[0]];
+      var feat = topojson.feature(world, dat);
+      function coordcheck(elt, index) {
+        //finds all the coordinate pairs in the mess of arrays.
+        if (elt.length == 2 && !isNaN(elt[0]) && !isNaN(elt[1])) {
+          //actual coordinates
+          return elt[0] >= graphs.limits[0][0] && elt[0] <= graphs.limits[0][1] && elt[1] >= graphs.limits[1][0] && elt[1] <= graphs.limits[1][1]; //compare to min and max for long and lat
+        } else if (elt instanceof Array) {
+            //just a sanity check so we don't break things
+            return elt.some(coordcheck);
+          }
+      }
+      g.append("g").attr("class", "land").selectAll("path").data(feat.features, function (d, i) {
+        if (graphs.limits) {
+          if (d.geometry.coordinates.some(coordcheck)) {
+            return i;
+          } else {
+            return null;
+          }
+        } else {
+          return i;
+        }
+      }).enter().append("path").style("fill", function (d, i) {
+        var tt = graphs.hl[d.id] || color(i);
+        if (isNaN(tt.a)) {
+          tt.a = graphs.opacity;
+        }
+        return "rgba(" + tt.r + "," + tt.g + "," + tt.b + "," + tt.a + ")";
+      }).style("stroke", "rgba(" + graphs.bcolor.r + "," + graphs.bcolor.g + "," + graphs.bcolor.b + "," + graphs.bcolor.a + ")").style("stroke-width", 0.5 + "px").attr("d", path).on("click", function (d, i) {
+        if (graphs.chl.length) {
+          if (cur) {
+            cur.style.fill = prev;
+          }
+          prev = this.style.fill;
+          var tt = graphs.chl[d.id] || graphs.chl[0] || prev;
+          if (isNaN(tt.a)) {
+            tt.a = graphs.opacity;
+          }
+          this.style.fill = "rgba(" + tt.r + "," + tt.g + "," + tt.b + "," + tt.a + ")";
+          cur = this;
+        }
+      });
+      if (graphs.lines) {
+        //array of linestrings
+        var linegroup = g.append("g");
+        linegroup.selectAll("g").data(graphs.lines).enter().append("path").attr("class", "route").attr("d", path).style("fill", "none").style("stroke", function (d) {
+          return "rgb(" + d.color.r + "," + d.color.g + "," + d.color.b + ")";
+        }).style("stroke-opacity", function (d) {
+          return isNaN(d.color.a) ? 1 : d.color.a;
+        }).style("stroke-width", function (d) {
+          return d.size + "px";
+        });
+        graphs.lines.forEach(function (element) {
+          linegroup.selectAll("g").data(element.coordinates).enter().append("circle").attr("class", "points").attr("transform", function (d) {
+            return "translate(" + projection(d) + ")";
+          }).attr("r", function (d, i) {
+            d.size = element.pointsize[i];return d.size;
+          }).style("fill", function (d, i) {
+            var c = element.pointcolor[i];
+            return "rgb(" + c.r + "," + c.g + "," + c.b + ")";
+          }).style("stroke", function (d, i) {
+            var c = element.pointcolor[i];
+            return "rgb(" + c.r + "," + c.g + "," + c.b + ")";
+          }).style("opacity", function (d, i) {
+            var a = isNaN(element.pointcolor[i].a) ? 1 : element.pointcolor[i].a;
+            return a;
+          }).style("stroke-width", "2px");
+          linegroup.selectAll("g").data(element.coordinates).enter().append("text").attr("class", "text").attr("transform", function (d) {
+            return "translate(" + projection(d) + ")";
+          }).attr("y", 10).attr("dy", ".71em").text(function (d, i) {
+            return element.pointlabel[i];
+          }).style("text-anchor", "middle").style("font", "11px sans-serif");
+        });
+      }
+      if (graphs.points) {
+        var pointgroup = g.append("g");
+        pointgroup.selectAll("g").data(graphs.points).enter().append("circle").attr("class", "points").attr("transform", function (d) {
+          return "translate(" + projection([d.lon, d.lat]) + ")";
+        }).attr("r", function (d) {
+          return d.size;
+        }).style("fill", function (d) {
+          return "rgb(" + d.color.r + "," + d.color.g + "," + d.color.b + ")";
+        }).style("stroke", function (d) {
+          return "rgb(" + d.color.r + "," + d.color.g + "," + d.color.b + ")";
+        }).style("opacity", function (d) {
+          return isNaN(d.color.a) ? 1 : d.color.a;
+        }).style("stroke-width", "2px");
+        pointgroup.selectAll("g").data(graphs.points).enter().append("text").attr("class", "text").attr("transform", function (d) {
+          return "translate(" + projection([d.lon, d.lat]) + ")";
+        }).attr("y", 10).attr("dy", ".71em").text(function (d) {
+          return d.label;
+        }).style("text-anchor", "middle").style("font", "11px sans-serif");
+      }
+    };
+    if (graphs.map) {
+      d3.json(graphs.map, draw);
+    } else if (graphs.tree) {
+      var parsedmap = JSON.parse(graphs.tree);
+      draw(parsedmap.error, parsedmap);
+    }
+  }
+  function capture(el) {
+    var mySVG = $(el).html();
+    return mySVG;
+  }
+  return {
+    update: update,
+    capture: capture
+  };
+})();
+
+},{"./assert":1,"topojson":3}],3:[function(require,module,exports){
 !function() {
   var topojson = {
     version: "1.6.19",
@@ -534,389 +953,4 @@
   else this.topojson = topojson;
 }();
 
-},{}],2:[function(require,module,exports){
-/* -*- Mode: js; js-indent-level: 2; indent-tabs-mode: nil; tab-width: 2 -*- */
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
-/*
- * Copyright 2013 Art Compiler LLC
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-"use strict";
-/*
-  ASSERTS AND MESSAGES
-  We use the 'assert()' function to trap invalid states of all kinds. External
-  messages are distinguished from internal messages by a numeric prefix that
-  indicates the error code associated with the message. For example, the
-  following two asserts implement an internal and external assert, respectively.
-     assert(false, "This code is broken.");
-     assert(false, "1001: Invalid user input.");
-  To aid in the writing of external messages, we keep them in a single global
-  table named 'messages'. Each module adds to this table its own messages
-  with an expression such as
-     messages[1001] = "Invalid user input.";
-  These messages are accessed with the 'message' function as such
-     message(1001);
-  Calling 'assert' with 'message' looks like
-     assert(x != y, message(1001));
-  ALLOCATING ERROR CODES
-  In order to avoid error code conflicts, each module claims a range of values
-  that is not already taken by the modules in the same system. A module claims
-  a range of codes by calling the function reserveCodeRange() like this:
-     reserveCodeRange(1000, 1999, "mymodule");
-  If the requested code range has any values that are already reserved, then
-  an assertion is raised.
-  USAGE
-  In general, only allocate message codes for external asserts. For internal
-  asserts, it is sufficient to simply inline the message text in the assert
-  expression.
-  It is good to write an assert for every undefined state, regardless of whether
-  it is the result of external input or not. Asserts can then be externalized if
-  and when they it is clear that they are the result of external input.
-  A client module can override the messages provided by the libraries it uses by
-  simply redefining those messages after the defining library is loaded. That is,
-  the client can copy and past the statements of the form
-     messages[1001] = "Invalid user input.";
-  and provide new text for the message.
-     messages[1001] = "Syntax error.";
-  In the same way different sets of messages can be overridden for the purpose
-  of localization.
-*/
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-var location = "";
-var messages = {};
-var reservedCodes = [];
-var ASSERT = true;
-var assert = (function () {
-  return !ASSERT ? function () {} : function (val, str) {
-    if (str === void 0) {
-      str = "failed!";
-    }
-    if (!val) {
-      var err = new Error(str);
-      err.location = location;
-      throw err;
-    }
-  };
-})();
-
-var message = function message(errorCode, args) {
-  var str = messages[errorCode];
-  if (args) {
-    args.forEach(function (arg, i) {
-      str = str.replace("%" + (i + 1), arg);
-    });
-  }
-  return errorCode + ": " + str;
-};
-
-var reserveCodeRange = function reserveCodeRange(first, last, moduleName) {
-  assert(first <= last, "Invalid code range");
-  var noConflict = reservedCodes.every(function (range) {
-    return last < range.first || first > range.last;
-  });
-  assert(noConflict, "Conflicting request for error code range");
-  reservedCodes.push({ first: first, last: last, name: moduleName });
-};
-
-var setLocation = function setLocation(location) {
-  //assert(location, "Empty location");
-  location = loc;
-};
-
-var clearLocation = function clearLocation() {
-  location = null;
-};
-
-var setCounter = function setCounter(n, message) {
-  count = n;
-  countMessage = message ? message : "ERROR count exceeded";
-};
-
-var checkCounter = function checkCounter() {
-  if (typeof count !== "number" || isNaN(count)) {
-    assert(false, "ERROR counter not set");
-    return;
-  }
-  assert(count--, countMessage);
-};
-
-exports.assert = assert;
-exports.message = message;
-exports.messages = messages;
-exports.reserveCodeRange = reserveCodeRange;
-
-},{}],3:[function(require,module,exports){
-/* -*- Mode: js; js-indent-level: 2; indent-tabs-mode: nil; tab-width: 2 -*- */
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
-/* Copyright (c) 2015, Jeff Dyer, Art Compiler LLC */
-// This product includes color specifications and designs developed by Cynthia Brewer (http://colorbrewer.org/).
-"use strict";
-
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj["default"] = obj; return newObj; } }
-
-var _assert = require("./assert");
-
-var _topojson = require("topojson");
-
-var topojson = _interopRequireWildcard(_topojson);
-
-//import * as http from "http";
-
-window.exports.viewer = (function () {
-  function update(el, obj, src, pool) {
-    obj = JSON.parse(obj);
-    var str;
-    var graphs = null; //array of graph objects, rather than a single object full of arrays.
-    //in this case I can do this because icicle makes sure all parameters have defaults.
-    if (obj.error && obj.error.length > 0) {
-      str = "ERROR";
-    } else {
-      if (!(obj.data instanceof Array)) {
-        obj.data = [obj.data];
-      } //edge case for a single object because the parser likes to unwrap arrays.
-    }
-    obj.data.forEach(function (element, index, array) {
-      if (typeof element === "object" && element.projection) {
-        graphs = element;
-      }
-    });
-    if (!graphs.height) {
-      graphs.height = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
-      graphs.height -= 100;
-    }
-    if (!graphs.width) {
-      graphs.width = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
-      graphs.width -= 20;
-    }
-    //partition looks for children arrays starting from root and positions and scales based on number of children and their values.
-    var svgd = d3.select(el);
-    svgd.selectAll("path").remove(); //clear each time
-    svgd.selectAll("g").remove();
-    svgd.selectAll("text").remove();
-    function styles(selection, these) {
-      these.forEach(function (p) {
-        selection.style(p.key, p.val);
-      });
-    }
-    var color = d3.scale.ordinal().range(graphs.color);
-    var projection = null;
-    switch (graphs.projection) {
-      case "albers":
-        projection = d3.geo.albers();
-        break;
-      case "azimuthal equal area":
-        projection = d3.geo.azimuthalEqualArea().clipAngle(180 - 1e-3);
-        break;
-      case "azimuthal equidistant":
-        projection = d3.geo.azimuthalEquidistant().clipAngle(180 - 1e-3);
-        break;
-      case "conic conformal":
-        projection = d3.geo.conicConformal();
-        break;
-      case "conic equal area":
-        projection = d3.geo.conicEqualArea();
-        break;
-      case "conic equidistant":
-        projection = d3.geo.conicEquidistant();
-        break;
-      case "equirectangular":
-        projection = d3.geo.equirectangular();
-        break;
-      case "gnomonic":
-        projection = d3.geo.gnomonic().clipAngle(90 - 1e-3);
-        break;
-      case "mercator":
-        projection = d3.geo.mercator();
-        break;
-      case "transverse mercator":
-        projection = d3.geo.transverseMercator();
-        break;
-      case "orthographic":
-        projection = d3.geo.orthographic().clipAngle(90);
-        break;
-      case "stereographic":
-        projection = d3.geo.stereographic().clipAngle(180 - 1e-4).clipExtent([[0, 0], [graphs.width, graphs.height]]);
-        break;
-    }
-    projection.center(graphs.center).scale(graphs.scale).translate([graphs.width / 2, graphs.height / 2]).rotate(graphs.rotation);
-    if (graphs.parallels) {
-      projection.parallels(graphs.parallels);
-    }
-    var path = d3.geo.path().projection(projection);
-    var graticule = d3.geo.graticule();
-    svgd.attr("width", graphs.width).attr("height", graphs.height).style("background-color", "rgb(" + graphs.bgcolor.r + "," + graphs.bgcolor.g + "," + graphs.bgcolor.b + ")");
-    var g = svgd.append("g");
-    if (graphs.title) {
-      var theight = 0;
-      var twidth = 0;
-      svgd.append("text").text(graphs.title.text).style("text-anchor", graphs.title.pos[1]).call(styles, graphs.style).each(function () {
-        var b = this.getBBox();
-        theight = b.height;
-        twidth = b.width;
-      }).attr("x", function () {
-        switch (graphs.title.pos[1]) {
-          case "start":
-            return 0;
-          case "middle":
-            return graphs.width / 2;
-          case "end":
-            return graphs.width;
-        }
-      }).attr("y", function () {
-        switch (graphs.title.pos[0]) {
-          case "top":
-            return theight;
-          case "middle":
-            return (graphs.height + theight) / 2;
-          case "bottom":
-            return graphs.height;
-        }
-      });
-    }
-    g.append("path").datum(graticule).attr("class", "graticule").attr("d", path).style("fill-opacity", 0).style("stroke", "#777").style("stroke-width", 0.5 + "px").style("stroke-opacity", 0.5);
-    if (graphs.zoom) {
-      var zoomed = function zoomed() {
-        g.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
-        svgd.selectAll(".points").attr("r", function (d) {
-          return d.size / d3.event.scale;
-        }).style("stroke-width", 2 / d3.event.scale + "px");
-        svgd.selectAll(".route").style("stroke-width", function (d) {
-          return d.size / d3.event.scale + "px";
-        });
-        svgd.selectAll(".text").attr("y", 10 / d3.event.scale).style("font", 11 / d3.event.scale + "px sans-serif");
-      };
-
-      var zoom = d3.behavior.zoom().scaleExtent(graphs.zoom).on("zoom", zoomed);
-      svgd.call(zoom).call(zoom.event);
-    }
-    var cur = null;
-    var prev = null;
-
-    function draw(error, world) {
-      if (error && error.length > 0) console.log("Didn't work: " + error);
-      var dat = world.objects[Object.keys(world.objects)[0]];
-      var feat = topojson.feature(world, dat);
-      function coordcheck(elt, index) {
-        //finds all the coordinate pairs in the mess of arrays.
-        if (elt.length == 2 && !isNaN(elt[0]) && !isNaN(elt[1])) {
-          //actual coordinates
-          return elt[0] >= graphs.limits[0][0] && elt[0] <= graphs.limits[0][1] && elt[1] >= graphs.limits[1][0] && elt[1] <= graphs.limits[1][1]; //compare to min and max for long and lat
-        } else if (elt instanceof Array) {
-            //just a sanity check so we don't break things
-            return elt.some(coordcheck);
-          }
-      }
-      g.append("g").attr("class", "land").selectAll("path").data(feat.features, function (d, i) {
-        if (graphs.limits) {
-          if (d.geometry.coordinates.some(coordcheck)) {
-            return i;
-          } else {
-            return null;
-          }
-        } else {
-          return i;
-        }
-      }).enter().append("path").style("fill", function (d, i) {
-        var tt = graphs.hl[d.id] || color(i);
-        if (isNaN(tt.a)) {
-          tt.a = graphs.opacity;
-        }
-        return "rgba(" + tt.r + "," + tt.g + "," + tt.b + "," + tt.a + ")";
-      }).style("stroke", "rgba(" + graphs.bcolor.r + "," + graphs.bcolor.g + "," + graphs.bcolor.b + "," + graphs.bcolor.a + ")").style("stroke-width", 0.5 + "px").attr("d", path).on("click", function (d, i) {
-        if (graphs.chl.length) {
-          if (cur) {
-            cur.style.fill = prev;
-          }
-          prev = this.style.fill;
-          var tt = graphs.chl[d.id] || graphs.chl[0] || prev;
-          if (isNaN(tt.a)) {
-            tt.a = graphs.opacity;
-          }
-          this.style.fill = "rgba(" + tt.r + "," + tt.g + "," + tt.b + "," + tt.a + ")";
-          cur = this;
-        }
-      });
-      if (graphs.lines) {
-        //array of linestrings
-        var linegroup = g.append("g");
-        linegroup.selectAll("g").data(graphs.lines).enter().append("path").attr("class", "route").attr("d", path).style("fill", "none").style("stroke", function (d) {
-          return "rgb(" + d.color.r + "," + d.color.g + "," + d.color.b + ")";
-        }).style("stroke-opacity", function (d) {
-          return isNaN(d.color.a) ? 1 : d.color.a;
-        }).style("stroke-width", function (d) {
-          return d.size + "px";
-        });
-        graphs.lines.forEach(function (element) {
-          linegroup.selectAll("g").data(element.coordinates).enter().append("circle").attr("class", "points").attr("transform", function (d) {
-            return "translate(" + projection(d) + ")";
-          }).attr("r", function (d, i) {
-            d.size = element.pointsize[i];return d.size;
-          }).style("fill", function (d, i) {
-            var c = element.pointcolor[i];
-            return "rgb(" + c.r + "," + c.g + "," + c.b + ")";
-          }).style("stroke", function (d, i) {
-            var c = element.pointcolor[i];
-            return "rgb(" + c.r + "," + c.g + "," + c.b + ")";
-          }).style("opacity", function (d, i) {
-            var a = isNaN(element.pointcolor[i].a) ? 1 : element.pointcolor[i].a;
-            return a;
-          }).style("stroke-width", "2px");
-          linegroup.selectAll("g").data(element.coordinates).enter().append("text").attr("class", "text").attr("transform", function (d) {
-            return "translate(" + projection(d) + ")";
-          }).attr("y", 10).attr("dy", ".71em").text(function (d, i) {
-            return element.pointlabel[i];
-          }).style("text-anchor", "middle").style("font", "11px sans-serif");
-        });
-      }
-      if (graphs.points) {
-        var pointgroup = g.append("g");
-        pointgroup.selectAll("g").data(graphs.points).enter().append("circle").attr("class", "points").attr("transform", function (d) {
-          return "translate(" + projection([d.lon, d.lat]) + ")";
-        }).attr("r", function (d) {
-          return d.size;
-        }).style("fill", function (d) {
-          return "rgb(" + d.color.r + "," + d.color.g + "," + d.color.b + ")";
-        }).style("stroke", function (d) {
-          return "rgb(" + d.color.r + "," + d.color.g + "," + d.color.b + ")";
-        }).style("opacity", function (d) {
-          return isNaN(d.color.a) ? 1 : d.color.a;
-        }).style("stroke-width", "2px");
-        pointgroup.selectAll("g").data(graphs.points).enter().append("text").attr("class", "text").attr("transform", function (d) {
-          return "translate(" + projection([d.lon, d.lat]) + ")";
-        }).attr("y", 10).attr("dy", ".71em").text(function (d) {
-          return d.label;
-        }).style("text-anchor", "middle").style("font", "11px sans-serif");
-      }
-    };
-    if (graphs.map) {
-      d3.json(graphs.map, draw);
-    } else if (graphs.tree) {
-      var parsedmap = JSON.parse(graphs.tree);
-      draw(parsedmap.error, parsedmap);
-    }
-  }
-  function capture(el) {
-    var mySVG = $(el).html();
-    return mySVG;
-  }
-  return {
-    update: update,
-    capture: capture
-  };
-})();
-
-},{"./assert":2,"topojson":1}]},{},[3]);
+},{}]},{},[1,2]);
