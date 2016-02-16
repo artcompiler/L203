@@ -806,6 +806,24 @@ let translate = (function() {
       }
     });
   };
+  function csv(node, options, resume){//takes in 'get {csv here} object' basically
+  	//0 = map, 1 = csv
+  	visit(node.elts[1], options, function (err, val) {
+      if(val.tree){
+        let params = {
+          op: "default",
+          prop: "csv",
+          val: val.tree
+        };
+        set(node, options, function (err1, val1) {//map
+          resume([].concat(err).concat(err1), val1);
+        }, params);
+      } else {
+        err = err.concat(error("Please provide a valid parsed file.", node.elts[1]));
+        resume([].concat(err), val);
+      }
+  	});
+  }
   function zoom(node, options, resume) {//0 = map, 1 = max, 2 = min --- zoom min max map
     visit(node.elts[1], options, function (err1, val1) {//max
       if(!isNaN(val1) && +val1 > 0){
@@ -1153,6 +1171,7 @@ let translate = (function() {
     "CHIGHLIGHT": chighlight,
     "POSITION": position,
     "TITLE": title,
+    "CSV": csv,
   };
   return translate;
 })();

@@ -50,14 +50,37 @@ window.exports.viewer = (function () {
         if(data.zoom){
           this.zoom(data.zoom, svgd, g);
         }
+        if(data.csv){
+          var csv = {};
+          d3.csv.parse(data.csv, function(d) {
+            csv[d.id] = {
+              county_name: d.county_name,
+              trump: +d.trump,
+              cruz: +d.cruz,
+              rubio: +d.rubio,
+              bush: +d.bush,
+              carson: +d.carson,
+              christie: +d.christie,
+              fiorina: +d.fiorina,
+              gilmore: +d.gilmore,
+              huckabee: +d.huckabee,
+              kasich: +d.kasich,
+              santorum: +d.santorum,
+              paul: +d.paul,
+              repnopref: +d.repnopref,
+              repother: +d.repother
+            };
+            return null;
+          });
+        }
         if (data.map) {
           var self = this;
           d3.json(data.map, function(error, json){
-            self.draw(error, json, g, data, path, projection);
+            self.draw(error, json, g, data, path, projection, csv);
           });
         } else if (data.tree) {
           var parsedmap = JSON.parse(data.tree);
-          this.draw(parsedmap.error, parsedmap, g, data, path, projection);
+          this.draw(parsedmap.error, parsedmap, g, data, path, projection, csv);
         }
       }
     },
@@ -147,7 +170,7 @@ window.exports.viewer = (function () {
       svgd.call(zoom).call(zoom.event);
     },
 
-    draw: function(error, world, g, graphs, path, projection){
+    draw: function(error, world, g, graphs, path, projection, csv){
       if (error && error.length > 0) return error;
       var dat = world.objects[Object.keys(world.objects)[0]];
       var feat = topojson.feature(world, dat);
@@ -200,6 +223,36 @@ window.exports.viewer = (function () {
                   click: click
                 }
               });
+            }
+          })
+          .on("mouseover", function (d, i){
+            if(csv){
+              var t = g.select('g.tooltip');
+              if(!t[0][0]){
+                t = g.append("g")
+                  .attr("class","tooltip")
+                  .style("pointer-events", "none");
+                t.append("rect");
+                t.append("text");
+              }
+              t.style("visibility", "visible")
+                .attr("transform", "translate("+path.centroid(d)+")");
+              var tex = t.select("text");
+              tex.text(csv[d.id].county_name);
+              tex.attr("alignment-baseline", "before-edge")
+              var rec = t.select("rect");
+              rec
+                .attr("height", tex.node().getBBox().height + 5)
+                .attr("width", tex.node().getBBox().width + 10)
+                .attr("x", -5)
+                .attr("fill", 'white')
+                .attr("stroke", 'grey');
+            }
+          })
+          .on("mouseout", function (d, i){
+            var t = g.select('g.tooltip');
+            if(t[0][0]){
+              t.style("visibility", "hidden");
             }
           });
       if(graphs.lines){
@@ -298,7 +351,8 @@ window.exports.viewer = (function () {
           data.width -= 20;
         }
         return (
-          <svg width={data.width} height={data.height} style={{backgroundColor:"rgb(" + data.bgcolor.r + "," + data.bgcolor.g + "," + data.bgcolor.b + ")"}}></svg>
+          <svg width={data.width} height={data.height} style={{backgroundColor:"rgb(" + data.bgcolor.r + "," + data.bgcolor.g + "," + data.bgcolor.b + ")"}}>
+          </svg>
         );
       } else {
         return (

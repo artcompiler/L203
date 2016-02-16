@@ -36,4 +36,5 @@ exports.globalLexicon = {
     "highlight" : { "tk": 0x01, "name": "HIGHLIGHT", "cls": "function", "length": 2, "arity": 2},
     "click-highlight" : { "tk": 0x01, "name": "CHIGHLIGHT", "cls": "function", "length": 2, "arity": 2},
     "title" : { "tk": 0x01, "name": "TITLE", "cls": "function", "length": 3, "arity": 3},
+    "csv" : { "tk": 0x01, "name": "CSV", "cls": "function", "length": 2, "arity": 2},
 }
