@@ -53,23 +53,8 @@ window.exports.viewer = (function () {
         if(data.csv){
           var csv = {};
           d3.csv.parse(data.csv, function(d) {
-            csv[d.id] = {
-              county_name: d.county_name,
-              trump: +d.trump,
-              cruz: +d.cruz,
-              rubio: +d.rubio,
-              bush: +d.bush,
-              carson: +d.carson,
-              christie: +d.christie,
-              fiorina: +d.fiorina,
-              gilmore: +d.gilmore,
-              huckabee: +d.huckabee,
-              kasich: +d.kasich,
-              santorum: +d.santorum,
-              paul: +d.paul,
-              repnopref: +d.repnopref,
-              repother: +d.repother
-            };
+            csv[d.id] = d;
+            delete csv[d.id].id;
             return null;
           });
         }
@@ -233,13 +218,30 @@ window.exports.viewer = (function () {
                   .attr("class","tooltip")
                   .style("pointer-events", "none");
                 t.append("rect");
-                t.append("text");
               }
               t.style("visibility", "visible")
                 .attr("transform", "translate("+path.centroid(d)+")");
-              var tex = t.select("text");
-              tex.text(csv[d.id].county_name);
-              tex.attr("alignment-baseline", "before-edge")
+              t.selectAll("text")
+                .remove();
+              var tex = t.append("text");
+              tex.append('tspan')
+                .text(csv[d.id].county_name);
+              for (var key in csv[d.id]){
+                if(key !== 'county_name' && Object.prototype.hasOwnProperty.call(csv[d.id], key)){
+                  var tem = tex.append('tspan')
+                    .attr('x', 0)
+                    .attr('dy', 20);
+                  if(key === 'repnopref'){
+                    tem.text('No Preference: ' + csv[d.id][key]);
+                  } else if (key === 'repother'){
+                    tem.text('Other: ' + csv[d.id][key]);
+                  } else {
+                    tem.text(key.charAt(0).toUpperCase() + key.slice(1) + ': ' + csv[d.id][key]);
+                  }
+                }
+              }
+              tex.selectAll('tspan')
+                .attr("alignment-baseline", "before-edge");
               var rec = t.select("rect");
               rec
                 .attr("height", tex.node().getBBox().height + 5)
