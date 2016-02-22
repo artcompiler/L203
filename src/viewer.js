@@ -37,7 +37,7 @@ window.exports.viewer = (function () {
         var graticule = d3.geo.graticule();
         var g = svgd.append("g");
         if(data.title){
-          this.title(svgd, data.title, data.style, data.width, data.height);
+          this.title(svgd, data.title, data.width, data.height);
         }
         g.append("path")
           .datum(graticule)
@@ -111,23 +111,40 @@ window.exports.viewer = (function () {
       }
     },
 
-    title: function(svgd, title, style, width, height){
+    title: function(svgd, title, width, height){
       var theight = 0;
       var twidth = 0;
-      svgd.append("text").text(title.text).style("text-anchor", title.pos[1]).call(this.styles, style).each(function () {
-        var b = this.getBBox();
-        theight = b.height;
-        twidth = b.width;
-      }).attr("x", function () {
-        switch (title.pos[1]) {
-          case "start":
-            return 0;
-          case "middle":
-            return width / 2;
-          case "end":
-            return width;
-        }
-      }).attr("y", function () {
+      if(!title.pos){
+        title.pos = ['top', 'middle'];
+      }
+      svgd.append("text")
+        .text(title.text)
+        .attr('fill', function (d) {
+          var col = title['font-color'] || title['color'] || title['fill'] || {r: 0, g: 0, b: 0};
+          return "rgb(" + col.r + "," + col.g + "," + col.b + ")";
+        })
+        .style('font-family', title['font-family'] || 'auto')
+        .style('font-weight', title['font-weight'] || 'bold')
+        .style('font-size', title['font-size'] || 40+'px')
+        .style('font-style', title['font-style'] || 'normal')
+        .style('text-decoration', title['text-decoration'] || 'none')
+        .style("text-anchor", title.pos[1])
+        .each(function () {
+          var b = this.getBBox();
+          theight = b.height;
+          twidth = b.width;
+        })
+        .attr("x", function () {
+          switch (title.pos[1]) {
+            case "start":
+              return 0;
+            case "middle":
+              return width / 2;
+            case "end":
+              return width;
+          }
+        })
+        .attr("y", function () {
         switch (title.pos[0]) {
           case "top":
             return theight;
@@ -136,7 +153,7 @@ window.exports.viewer = (function () {
           case "bottom":
             return height;
         }
-      });
+        });
     },
 
     zoom: function(zoomamount, svgd, g){
@@ -156,10 +173,12 @@ window.exports.viewer = (function () {
     },
 
     draw: function(error, world, g, graphs, path, projection, csv){
+      //things that need replacing:
+      //props: graphs.color, graphs.opacity, graphs.bcolor (border)
       if (error && error.length > 0) return error;
       var dat = world.objects[Object.keys(world.objects)[0]];
       var feat = topojson.feature(world, dat);
-      var color = d3.scale.ordinal().range(graphs.color);
+      var color = d3.scale.ordinal().range(graphs.mapstyle.color);
       function coordcheck(elt, index) {//only used in here.
         //finds all the coordinate pairs in the mess of arrays.
         if (elt.length == 2 && !isNaN(elt[0]) && !isNaN(elt[1])) {
@@ -188,19 +207,19 @@ window.exports.viewer = (function () {
           .style("fill", function (d, i) {
             var tt = (self.props.click ? self.props.click[d.id] : null) || graphs.hl[d.id] || color(i);
             if (isNaN(tt.a)) {
-              tt.a = graphs.opacity;
+              tt.a = graphs.mapstyle.opacity;
             }
             return "rgba(" + tt.r + "," + tt.g + "," + tt.b + "," + tt.a + ")";
           })
-          .style("stroke", "rgba(" + graphs.bcolor.r + "," + graphs.bcolor.g + "," + graphs.bcolor.b + "," + graphs.bcolor.a + ")")
-          .style("stroke-width", 0.5 + "px")
+          .style("stroke", "rgba(" + graphs.borders.color.r + "," + graphs.borders.color.g + "," + graphs.borders.color.b + "," + graphs.borders.color.a + ")")
+          .style("stroke-width", graphs.borders.thickness || 0.5)
           .attr("d", path)
           .on("click", function (d, i) {
             if (graphs.chl.length) {
               var click = {};
               var tt = graphs.chl[d.id] || graphs.chl[0] || prev;
               if (isNaN(tt.a)) {
-                tt.a = graphs.opacity;
+                tt.a = graphs.mapstyle.opacity;
               }
               click[d.id] = tt;
               window.dispatcher.dispatch({
@@ -217,15 +236,51 @@ window.exports.viewer = (function () {
                 t = g.append("g")
                   .attr("class","tooltip")
                   .style("pointer-events", "none");
-                t.append("rect");
+                t.append("rect")
+                  .style('fill', function (d) {
+                    var col = graphs.info['background'] || {r: 255, g: 255, b: 255};
+                    if(!col.a){
+                      col.a = 1;
+                    }
+                    return "rgba(" + col.r + "," + col.g + "," + col.b + "," + col.a + ")";
+                  });
               }
               t.style("visibility", "visible")
                 .attr("transform", "translate("+path.centroid(d)+")");
               t.selectAll("text")
                 .remove();
-              var tex = t.append("text");
+              var tex = t.append("text")
+                .attr('fill', function (d) {
+                  var col = graphs.info['font-color'] || graphs.info['color'] || graphs.info['fill'] || {r: 0, g: 0, b: 0};
+                  return "rgb(" + col.r + "," + col.g + "," + col.b + ")";
+                })
+                .style('font-family', graphs.info['font-family'] || 'auto')
+                .style('font-weight', graphs.info['font-weight'] || 'normal')
+                .style('font-size', graphs.info['font-size'] || 16+'px')
+                .style('font-style', graphs.info['font-style'] || 'normal')
+                .style('text-decoration', graphs.info['text-decoration'] || 'none');
               tex.append('tspan')
                 .text(csv[d.id].county_name);
+              /*var lis = [];
+              for (var key in csv[d.id]){
+                if(key !== 'county_name' && Object.prototype.hasOwnProperty.call(csv[d.id], key)){
+                  if(!lis.length || lis[lis.length-1] <= +csv[d.id][key]){
+                    var tem = tex.append('tspan')
+                      .attr('x', 0)
+                      .attr('dy', 20);
+                    lis.push(+csv[d.id][key]);
+                  } else {//we have a list and this element is smaller than 
+
+                  }
+                  if(key === 'repnopref'){
+                    tem.text('No Preference: ' + csv[d.id][key]);
+                  } else if (key === 'repother'){
+                    tem.text('Other: ' + csv[d.id][key]);
+                  } else {
+                    tem.text(key.charAt(0).toUpperCase() + key.slice(1) + ': ' + csv[d.id][key]);
+                  }
+                }
+              }*/
               for (var key in csv[d.id]){
                 if(key !== 'county_name' && Object.prototype.hasOwnProperty.call(csv[d.id], key)){
                   var tem = tex.append('tspan')
@@ -335,12 +390,6 @@ window.exports.viewer = (function () {
       }
     },
 
-    styles: function(selection, these){
-      these.forEach(function (p) {
-        selection.style(p.key, p.val);
-      });
-    },
-
     render: function () {
       var data = this.props.data ? this.props.data[0] : null;
       if(data){
@@ -353,7 +402,7 @@ window.exports.viewer = (function () {
           data.width -= 20;
         }
         return (
-          <svg width={data.width} height={data.height} style={{backgroundColor:"rgb(" + data.bgcolor.r + "," + data.bgcolor.g + "," + data.bgcolor.b + ")"}}>
+          <svg width={data.width} height={data.height} style={{backgroundColor:"rgb(" + data.mapstyle.background.r + "," + data.mapstyle.background.g + "," + data.mapstyle.background.b + ")"}}>
           </svg>
         );
       } else {
