@@ -382,28 +382,9 @@ window.exports.viewer = (function () {
             return "rgb(" + col.r + "," + col.g + "," + col.b + ")";
           }).style('font-family', graphs.info['font-family'] || 'auto').style('font-weight', graphs.info['font-weight'] || 'normal').style('font-size', graphs.info['font-size'] || 16 + 'px').style('font-style', graphs.info['font-style'] || 'normal').style('text-decoration', graphs.info['text-decoration'] || 'none');
           tex.append('tspan').text(csv[d.id].county_name);
-          /*var lis = [];
-          for (var key in csv[d.id]){
-            if(key !== 'county_name' && Object.prototype.hasOwnProperty.call(csv[d.id], key)){
-              if(!lis.length || lis[lis.length-1] <= +csv[d.id][key]){
-                var tem = tex.append('tspan')
-                  .attr('x', 0)
-                  .attr('dy', 20);
-                lis.push(+csv[d.id][key]);
-              } else {//we have a list and this element is smaller than 
-               }
-              if(key === 'repnopref'){
-                tem.text('No Preference: ' + csv[d.id][key]);
-              } else if (key === 'repother'){
-                tem.text('Other: ' + csv[d.id][key]);
-              } else {
-                tem.text(key.charAt(0).toUpperCase() + key.slice(1) + ': ' + csv[d.id][key]);
-              }
-            }
-          }*/
           for (var key in csv[d.id]) {
             if (key !== 'county_name' && Object.prototype.hasOwnProperty.call(csv[d.id], key)) {
-              var tem = tex.append('tspan').attr('x', 0).attr('dy', 20);
+              var tem = tex.append('tspan').attr('class', 'rep').attr('x', 0).attr('dy', 20).data([{ name: key, votes: +csv[d.id][key] }]);
               if (key === 'repnopref') {
                 tem.text('No Preference: ' + csv[d.id][key]);
               } else if (key === 'repother') {
@@ -414,6 +395,20 @@ window.exports.viewer = (function () {
             }
           }
           tex.selectAll('tspan').attr("alignment-baseline", "before-edge");
+          if (graphs.info.sorter) {
+            tex.selectAll('.rep').sort(function (a, b) {
+              if (isNaN(a[graphs.info.sorter])) {
+                var s = b[graphs.info.sorter].localeCompare(a[graphs.info.sorter]);
+              } else {
+                var s = b[graphs.info.sorter] - a[graphs.info.sorter];
+              }
+              if (graphs.info.order) {
+                return -1 * s;
+              } else {
+                return s;
+              }
+            });
+          }
           var rec = t.select("rect");
           rec.attr("height", tex.node().getBBox().height + 5).attr("width", tex.node().getBBox().width + 10).attr("x", -5).attr("fill", 'white').attr("stroke", 'grey');
         }
