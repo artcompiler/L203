@@ -93,7 +93,7 @@ window.exports.viewer = (function () {
         .style('fill', function (d) {
           var col = data.info['background'] || {r: 255, g: 255, b: 255};
           if(!col.a){
-            col.a = 1;
+            col.a = 100;
           }
           return "rgba(" + col.r + "," + col.g + "," + col.b + "," + col.a + ")";
         });
@@ -303,7 +303,7 @@ window.exports.viewer = (function () {
         }
       }
       self = this;
-      g.append("g")
+      g.insert("g", 'g.tooltip')
         .attr("class", "land")
         .selectAll("path").data(feat.features, function (d, i) {
           if (graphs.limits) {
