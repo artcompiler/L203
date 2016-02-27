@@ -832,9 +832,9 @@ let translate = (function() {
     let opt = {
       "tooltip": 0,
       "top": 1,
-      "left": 2,
+      "bottom": 2,
       "right": 3,
-      "bottom": 4,
+      "left": 4,
     };
     visit(node.elts[1], options, function (err, val) {
       if(!isNaN(opt[val])){

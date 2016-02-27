@@ -187,6 +187,16 @@ window.exports.viewer = (function () {
       svgd.selectAll("text").remove();
       var data = this.props.data ? this.props.data[0] : null;
       if (data) {
+        if (!data.height) {
+          data.height = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
+          data.height -= 100;
+        }
+        if (!data.width) {
+          data.width = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
+          data.width -= 20;
+        }
+        svgd.attr("height", data.height).attr("width", data.width).style("background_color", "rgb(" + data.mapstyle.background.r + "," + data.mapstyle.background.g + "," + data.mapstyle.background.b + ")");
+        //do initial tooltip stuff here
         var projection = this.projection(data.projection);
         projection.center(data.center).scale(data.scale).translate([data.width / 2, data.height / 2]).rotate(data.rotation);
         if (data.parallels) {
@@ -198,17 +208,19 @@ window.exports.viewer = (function () {
         if (data.title) {
           this.title(svgd, data.title, data.width, data.height);
         }
-        g.append("path").datum(graticule).attr("class", "graticule").attr("d", path).style("fill-opacity", 0).style("stroke", "#777").style("stroke-width", 0.5 + "px").style("stroke-opacity", 0.5);
-        if (data.zoom) {
-          this.zoom(data.zoom, svgd, g);
-        }
+        var csv = null;
         if (data.csv) {
-          var csv = {};
+          csv = {};
           d3.csv.parse(data.csv, function (d) {
             csv[d.id] = d;
             delete csv[d.id].id;
             return null;
           });
+          this.setinfo(svgd, g, data, csv);
+        }
+        g.append("path").datum(graticule).attr("class", "graticule").attr("d", path).style("fill-opacity", 0).style("stroke", "#777").style("stroke-width", 0.5 + "px").style("stroke-opacity", 0.5);
+        if (data.zoom) {
+          this.zoom(data.zoom, svgd, g);
         }
         if (data.map) {
           var self = this;
@@ -219,6 +231,88 @@ window.exports.viewer = (function () {
           var parsedmap = JSON.parse(data.tree);
           this.draw(parsedmap.error, parsedmap, g, data, path, projection, csv);
         }
+      }
+    },
+
+    setinfo: function setinfo(svgd, g, data, csv) {
+      //tooltip does not exist
+      var t = g.append("g").attr("class", "tooltip").style("pointer-events", "none");
+      t.append("rect").style('fill', function (d) {
+        var col = data.info['background'] || { r: 255, g: 255, b: 255 };
+        if (!col.a) {
+          col.a = 1;
+        }
+        return "rgba(" + col.r + "," + col.g + "," + col.b + "," + col.a + ")";
+      });
+      if (data.info.position) {
+        //not a tooltip
+        var largest = [0, 0];
+        Object.keys(csv).forEach(function (id) {
+          //for each ID location
+          Object.keys(csv[id]).forEach(function (element) {
+            //for each element in that ID location
+            if (element === "county_name") {
+              if (csv[id][element].length > largest[1]) {
+                //if it's larger replace
+                largest[0] = id;
+                largest[1] = csv[id][element].length;
+              }
+            } else {
+              var str = element + ': ' + csv[id][element];
+              if (str.length > largest[1]) {
+                largest[0] = id;
+                largest[1] = str.length;
+              }
+            }
+          });
+        }); //we know which one has the highest width now (largest[0])
+        var id = largest[0];
+        var tex = t.append("text").attr('fill', function (d) {
+          return "rgba(255,255,255,0)";
+        }).style('font-family', data.info['font-family'] || 'auto').style('font-weight', data.info['font-weight'] || 'normal').style('font-size', data.info['font-size'] || 16 + 'px').style('font-style', data.info['font-style'] || 'normal').style('text-decoration', data.info['text-decoration'] || 'none');
+        tex.append('tspan').text(csv[id].county_name);
+        for (var key in csv[id]) {
+          if (key !== 'county_name' && Object.prototype.hasOwnProperty.call(csv[id], key)) {
+            var tem = tex.append('tspan').attr('class', 'rep').attr('x', 0).attr('dy', 20).data([{ name: key, votes: +csv[id][key] }]);
+            if (key === 'repnopref') {
+              tem.text('No Preference: ' + csv[id][key]);
+            } else if (key === 'repother') {
+              tem.text('Other: ' + csv[id][key]);
+            } else {
+              tem.text(key.charAt(0).toUpperCase() + key.slice(1) + ': ' + csv[id][key]);
+            }
+          }
+        }
+        tex.selectAll('tspan').attr("alignment-baseline", "before-edge");
+        var rec = t.select("rect");
+        var textwidth = tex.node().getBBox().width;
+        var textheight = tex.node().getBBox().height;
+        //set the new height and width only in svg; height and width keep being used for the map
+        //if it's on the top or left the map needs to be pushed over.
+        if (data.info.position < 3) {
+          //top or bottom
+          svgd.attr("height", data.height + textheight + 5);
+          if (data.info.position === 1) {
+            //push it down
+            svgd.selectAll('g').attr("transform", "translate(" + [0, textheight + 5] + ")");
+            svgd.selectAll('text').attr("transform", "translate(" + [0, textheight + 5] + ")");
+            t.attr("transform", "translate(" + [(data.width - (textwidth + 10)) / 2, -(textheight + 5)] + ")");
+          } else {
+            t.attr("transform", "translate(" + [(data.width - (textwidth + 10)) / 2, data.height] + ")");
+          }
+        } else {
+          //we know it exists so we just need 'not top or bottom'
+          svgd.attr("width", data.width + textwidth + 10);
+          if (data.info.position === 4) {
+            //push it right
+            svgd.selectAll('g').attr("transform", "translate(" + [textwidth + 10, 0] + ")");
+            svgd.selectAll('text').attr("transform", "translate(" + [textwidth + 10, 0] + ")");
+            t.attr("transform", "translate(" + [-(textwidth + 10), (data.height - (textheight + 5)) / 2] + ")");
+          } else {
+            t.attr("transform", "translate(" + [data.width, (data.height - (textheight + 5)) / 2] + ")");
+          }
+        }
+        rec.attr("height", textheight + 5).attr("width", textwidth + 10).attr("x", -5).attr("stroke", 'grey');
       }
     },
 
@@ -365,17 +459,11 @@ window.exports.viewer = (function () {
       }).on("mouseover", function (d, i) {
         if (csv) {
           var t = g.select('g.tooltip');
-          if (!t[0][0]) {
-            t = g.append("g").attr("class", "tooltip").style("pointer-events", "none");
-            t.append("rect").style('fill', function (d) {
-              var col = graphs.info['background'] || { r: 255, g: 255, b: 255 };
-              if (!col.a) {
-                col.a = 1;
-              }
-              return "rgba(" + col.r + "," + col.g + "," + col.b + "," + col.a + ")";
-            });
+          t.style("visibility", "visible");
+          if (!graphs.info.position) {
+            //it should already be in position otherwise
+            t.attr("transform", "translate(" + path.centroid(d) + ")");
           }
-          t.style("visibility", "visible").attr("transform", "translate(" + path.centroid(d) + ")");
           t.selectAll("text").remove();
           var tex = t.append("text").attr('fill', function (d) {
             var col = graphs.info['font-color'] || graphs.info['color'] || graphs.info['fill'] || { r: 0, g: 0, b: 0 };
@@ -409,12 +497,15 @@ window.exports.viewer = (function () {
               }
             });
           }
-          var rec = t.select("rect");
-          rec.attr("height", tex.node().getBBox().height + 5).attr("width", tex.node().getBBox().width + 10).attr("x", -5).attr("fill", 'white').attr("stroke", 'grey');
+          if (!graphs.info.position) {
+            //in the tooltip case the size can change
+            var rec = t.select("rect");
+            rec.attr("height", tex.node().getBBox().height + 5).attr("width", tex.node().getBBox().width + 10).attr("x", -5).attr("stroke", 'grey');
+          }
         }
       }).on("mouseout", function (d, i) {
         var t = g.select('g.tooltip');
-        if (t[0][0]) {
+        if (t[0][0] && !graphs.info.position) {
           t.style("visibility", "hidden");
         }
       });
@@ -476,10 +567,49 @@ window.exports.viewer = (function () {
         if (!data.height) {
           data.height = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
           data.height -= 100;
+          if (data.csv && data.info && data.info.position && data.info.position < 3) {
+            //top or bottom
+            var csv = {};
+            d3.csv.parse(data.csv, function (d) {
+              csv[d.id] = d;
+              delete csv[d.id].id;
+              return null;
+            }); //render the set with the longest line - if not for the height we still need the width stable
+            var largest = [0, 0];
+            Object.keys(csv).forEach(function (id) {
+              //for each ID location
+              Object.keys(csv[id]).forEach(function (element) {
+                //for each element in that ID location
+                if (element === "county_name") {
+                  if (csv[id][element].length > largest[1]) {
+                    //if it's larger replace
+                    largest[0] = id;
+                    largest[1] = csv[id][element].length;
+                  }
+                } else {
+                  var str = element + ': ' + csv[id][element];
+                  if (str.length > largest[1]) {
+                    largest[0] = id;
+                    largest[1] = str.length;
+                  }
+                }
+              });
+            }); //we now know which id to render
+            //the question now is how to make it render to get the width and height
+          }
         }
         if (!data.width) {
           data.width = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
           data.width -= 20;
+          if (data.csv && data.info && data.info.position >= 3) {
+            //left or right
+            var csv = {};
+            d3.csv.parse(data.csv, function (d) {
+              csv[d.id] = d;
+              delete csv[d.id].id;
+              return null;
+            });
+          }
         }
         return React.createElement("svg", { width: data.width, height: data.height, style: { backgroundColor: "rgb(" + data.mapstyle.background.r + "," + data.mapstyle.background.g + "," + data.mapstyle.background.b + ")" } });
       } else {
