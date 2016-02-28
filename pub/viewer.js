@@ -270,7 +270,10 @@ window.exports.viewer = (function () {
         var tex = t.append("text").attr('fill', function (d) {
           return "rgba(255,255,255,0)";
         }).style('font-family', data.info['font-family'] || 'auto').style('font-weight', data.info['font-weight'] || 'normal').style('font-size', data.info['font-size'] || 16 + 'px').style('font-style', data.info['font-style'] || 'normal').style('text-decoration', data.info['text-decoration'] || 'none');
-        tex.append('tspan').text(csv[id].county_name);
+        var titlet = tex.append('tspan').text(csv[id].county_name);
+        if (data.info.title) {
+          titlet.style('font-family', data.info.title['font-family'] || data.info['font-family'] || 'auto').style('font-weight', data.info.title['font-weight'] || data.info['font-weight'] || 'normal').style('font-size', data.info.title['font-size'] || data.info['font-size'] || 16 + 'px').style('font-style', data.info.title['font-style'] || data.info['font-style'] || 'normal').style('text-decoration', data.info.title['text-decoration'] || data.info['text-decoration'] || 'none');
+        }
         for (var key in csv[id]) {
           if (key !== 'county_name' && Object.prototype.hasOwnProperty.call(csv[id], key)) {
             var tem = tex.append('tspan').attr('class', 'rep').attr('x', 0).attr('dy', 20).data([{ name: key, votes: +csv[id][key] }]);
@@ -469,7 +472,13 @@ window.exports.viewer = (function () {
             var col = graphs.info['font-color'] || graphs.info['color'] || graphs.info['fill'] || { r: 0, g: 0, b: 0 };
             return "rgb(" + col.r + "," + col.g + "," + col.b + ")";
           }).style('font-family', graphs.info['font-family'] || 'auto').style('font-weight', graphs.info['font-weight'] || 'normal').style('font-size', graphs.info['font-size'] || 16 + 'px').style('font-style', graphs.info['font-style'] || 'normal').style('text-decoration', graphs.info['text-decoration'] || 'none');
-          tex.append('tspan').text(csv[d.id].county_name);
+          var titlet = tex.append('tspan').text(csv[d.id].county_name);
+          if (graphs.info.title) {
+            titlet.attr('fill', function (d) {
+              var col = graphs.info.title['font-color'] || graphs.info.title['color'] || graphs.info.title['fill'] || graphs.info['font-color'] || graphs.info['color'] || graphs.info['fill'] || { r: 0, g: 0, b: 0 };
+              return "rgb(" + col.r + "," + col.g + "," + col.b + ")";
+            }).style('font-family', graphs.info.title['font-family'] || graphs.info['font-family'] || 'auto').style('font-weight', graphs.info.title['font-weight'] || graphs.info['font-weight'] || 'normal').style('font-size', graphs.info.title['font-size'] || graphs.info['font-size'] || 16 + 'px').style('font-style', graphs.info.title['font-style'] || graphs.info['font-style'] || 'normal').style('text-decoration', graphs.info.title['text-decoration'] || graphs.info['text-decoration'] || 'none');
+          }
           for (var key in csv[d.id]) {
             if (key !== 'county_name' && Object.prototype.hasOwnProperty.call(csv[d.id], key)) {
               var tem = tex.append('tspan').attr('class', 'rep').attr('x', 0).attr('dy', 20).data([{ name: key, votes: +csv[d.id][key] }]);
