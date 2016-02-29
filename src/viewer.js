@@ -126,7 +126,8 @@ window.exports.viewer = (function () {
           .style('font-style', data.info['font-style'] || 'normal')
           .style('text-decoration', data.info['text-decoration'] || 'none');
         var titlet = tex.append('tspan')
-          .text(csv[id].county_name);
+          .text(csv[id].county_name)
+          .attr("alignment-baseline", "before-edge");
         if(data.info.title){
           titlet
             .style('font-family', data.info.title['font-family'] || data.info['font-family'] || 'auto')
@@ -135,13 +136,19 @@ window.exports.viewer = (function () {
             .style('font-style', data.info.title['font-style'] || data.info['font-style'] || 'normal')
             .style('text-decoration', data.info.title['text-decoration'] || data.info['text-decoration'] || 'none');
         }
+        var h = titlet.node().getBBox().height;
+        var h1 = titlet.node().getBBox().height;
         for (var key in csv[id]){
           if(key !== 'county_name' && Object.prototype.hasOwnProperty.call(csv[id], key)){
+            if(tem && h === h1){
+              h = tem.node().getBBox().height - (h + 2);
+            }
             var tem = tex.append('tspan')
               .attr('class','rep')
               .attr('x', 0)
-              .attr('dy', 20)
-              .data([{name: key, votes: +csv[id][key]}]);
+              .attr('dy', h)
+              .data([{name: key, votes: +csv[id][key]}])
+              .attr("alignment-baseline", "before-edge");
             if(key === 'repnopref'){
               tem.text('No Preference: ' + csv[id][key]);
             } else if (key === 'repother'){
@@ -151,8 +158,6 @@ window.exports.viewer = (function () {
             }
           }
         }
-        tex.selectAll('tspan')
-          .attr("alignment-baseline", "before-edge");
         var rec = t.select("rect");
         var textwidth = tex.node().getBBox().width;
         var textheight = tex.node().getBBox().height;
@@ -370,7 +375,8 @@ window.exports.viewer = (function () {
                 .style('font-style', graphs.info['font-style'] || 'normal')
                 .style('text-decoration', graphs.info['text-decoration'] || 'none');
               var titlet = tex.append('tspan')
-                .text(csv[d.id].county_name);
+                .text(csv[d.id].county_name)
+                .attr("alignment-baseline", "before-edge");
               if(graphs.info.title){
                 titlet
                   .attr('fill', function (d) {
@@ -383,13 +389,23 @@ window.exports.viewer = (function () {
                   .style('font-style', graphs.info.title['font-style'] || graphs.info['font-style'] || 'normal')
                   .style('text-decoration', graphs.info.title['text-decoration'] || graphs.info['text-decoration'] || 'none');
               }
+              //first is always equal to titlet.node().getBBox().height
+              //second seems to be tem height + dy
+              //so to get the real height we just subtract the previous dy
+              //so we need to get the second one, keep it, and that's it.
+              var h = titlet.node().getBBox().height;
+              var h1 = titlet.node().getBBox().height;
               for (var key in csv[d.id]){
                 if(key !== 'county_name' && Object.prototype.hasOwnProperty.call(csv[d.id], key)){
+                  if(tem && h === h1){
+                    h = tem.node().getBBox().height - (h + 2);
+                  }
                   var tem = tex.append('tspan')
                     .attr('class','rep')
                     .attr('x', 0)
-                    .attr('dy', 20)
-                    .data([{name: key, votes: +csv[d.id][key]}]);
+                    .attr('dy', h)
+                    .data([{name: key, votes: +csv[d.id][key]}])
+                    .attr("alignment-baseline", "before-edge");
                   if(key === 'repnopref'){
                     tem.text('No Preference: ' + csv[d.id][key]);
                   } else if (key === 'repother'){
@@ -399,8 +415,6 @@ window.exports.viewer = (function () {
                   }
                 }
               }
-              tex.selectAll('tspan')
-                .attr("alignment-baseline", "before-edge");
               if(graphs.info.sorter){
                 tex.selectAll('.rep')
                   .sort(function (a, b){
