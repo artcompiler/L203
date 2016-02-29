@@ -505,7 +505,7 @@ window.exports.viewer = (function () {
             }
           }
           if (graphs.info.sorter) {
-            tex.selectAll('.rep').sort(function (a, b) {
+            tex.selectAll('.rep').attr('dy', h).sort(function (a, b) {
               if (isNaN(a[graphs.info.sorter])) {
                 var s = b[graphs.info.sorter].localeCompare(a[graphs.info.sorter]);
               } else {
@@ -517,6 +517,7 @@ window.exports.viewer = (function () {
                 return s;
               }
             });
+            tex.select('.rep').attr('dy', h1); //this should be the first one.
           }
           if (!graphs.info.position) {
             //in the tooltip case the size can change
