@@ -445,6 +445,21 @@ window.exports.viewer = (function () {
         }
       }).enter().append("path").style("fill", function (d, i) {
         var tt = (self.props.click ? self.props.click[d.id] : null) || graphs.hl[d.id] || color(i);
+        if (csv && graphs.dhl) {
+          var max = [null, 0];
+          for (var key in csv[d.id]) {
+            if (key !== 'county_name' && Object.prototype.hasOwnProperty.call(csv[d.id], key)) {
+              if (+csv[d.id][key] > max[1]) {
+                //highest votes so far
+                max[0] = key;
+                max[1] = +csv[d.id][key];
+              }
+            }
+          }
+          if (graphs.dhl[max[0]]) {
+            tt = graphs.dhl[max[0]];
+          }
+        }
         if (isNaN(tt.a)) {
           tt.a = graphs.mapstyle.opacity;
         }

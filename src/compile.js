@@ -975,6 +975,32 @@ let translate = (function() {
       }, params);
     });
   };
+  //use take data names and colors
+  //in implementation, color everything where that data is the highest value with that color
+  function dhighlight(node, options, resume){
+    var ret = {};
+    visit(node.elts[1], options, function (err1, val1) {//[[id, color], [id, color]]
+      if(!(val1 instanceof Array)){
+        err1 = err1.concat(error("Argument must be an array.", node.elts[1]));
+      }
+      val1.forEach(function (element, index){//it will be a string, everything here is
+        console.log(element);
+        element[0] = element[0].charAt(0).toLowerCase() + element[0].slice(1);
+        ret[element[0]] = colorcheck(element[1]);
+        if(ret[element[0]].err && ret[element[0]].err.length){
+          err1 = err1.concat(error(ret[element[0]].err+" at index "+index+'.', node.elts[1]));
+        }
+      });
+      let params = {
+        op: "default",
+        prop: "dhl",
+        val: ret
+      };
+      set(node, options, function (err, val) {
+        resume([].concat(err).concat(err1), val);
+      }, params);
+    });
+  };
   let colors = {
     "yellow green" : 'YlGn',
     "yellow green blue" : 'YlGnBu',
@@ -1165,6 +1191,7 @@ let translate = (function() {
     "ROTATE" : rotate,
     "HIGHLIGHT": highlight,
     "CHIGHLIGHT": chighlight,
+    "DHIGHLIGHT": dhighlight,
     "POSITION": position,
     "TITLE": title,
     "CSV": csv,
