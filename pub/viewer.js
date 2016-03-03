@@ -538,6 +538,28 @@ window.exports.viewer = (function () {
             //in the tooltip case the size can change
             var rec = t.select("rect");
             rec.attr("height", tex.node().getBBox().height + 5).attr("width", tex.node().getBBox().width + 10).attr("x", -5).attr("stroke", 'grey');
+            //check each corner
+            //top left is path.centroid(d) with x - 5
+            //other corners are found by adding bbox.width or bbox.height to top left
+            var tl = path.centroid(d);
+            tl[0] -= 5;
+            var br = rec.node().getBBox();
+            //compare to 0, graphs.width, and graphs.height
+            if (0 > tl[0]) {
+              tl[0] = 0; //just shift it into frame
+            } else if (graphs.width < tl[0] + br.width) {
+                //calculate the new location
+                var diff = tl[0] + br.width - graphs.width; //how far the far edge is off the map
+                tl[0] -= diff;
+              }
+            if (0 > tl[1]) {
+              tl[1] = 0;
+            } else if (graphs.width < tl[1] + br.height) {
+              var diff = tl[1] + br.height - graphs.height;
+              tl[1] -= diff;
+            }
+            tl[0] += 5;
+            t.attr("transform", "translate(" + tl + ")");
           }
         }
       }).on("mouseout", function (d, i) {
