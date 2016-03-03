@@ -509,7 +509,7 @@ window.exports.viewer = (function () {
               if (tem && h === h1) {
                 h = tem.node().getBBox().height - (h + 2);
               }
-              var tem = tex.append('tspan').attr('class', 'rep').attr('x', 0).attr('dy', h).data([{ name: key, votes: +csv[d.id][key] }]).attr("alignment-baseline", "before-edge");
+              var tem = tex.append('tspan').attr('class', 'rep').attr('x', graphs.dhl ? 10 : 0).attr('dy', h).data([{ name: key, votes: +csv[d.id][key] }]).attr("alignment-baseline", "before-edge");
               if (key === 'repnopref') {
                 tem.text('No Preference: ' + csv[d.id][key]);
               } else if (key === 'repother') {
@@ -533,6 +533,18 @@ window.exports.viewer = (function () {
               }
             });
             tex.select('.rep').attr('dy', h1); //this should be the first one.
+          }
+          if (graphs.dhl) {
+            //after the sorter so we don't have to deal with moving these around.
+            //thanks to h1 and h, we should be able to figure out how to position these.
+            t.selectAll('rect.legend').remove();
+            var r = tex.selectAll('.rep');
+            r.data().forEach(function (element, index) {
+              //elements have .name and .votes
+              if (graphs.dhl[element.name]) {
+                t.append('rect').attr('class', 'legend').attr('y', h1 + h * index + h / 2 - 5 / 2).attr('height', 5).attr('width', 5).attr('fill', "rgb(" + graphs.dhl[element.name].r + "," + graphs.dhl[element.name].g + "," + graphs.dhl[element.name].b + ")");
+              }
+            });
           }
           if (!graphs.info.position) {
             //in the tooltip case the size can change
