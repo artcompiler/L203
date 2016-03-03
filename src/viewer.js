@@ -476,6 +476,7 @@ window.exports.viewer = (function () {
                 var tl = path.centroid(d);
                 tl[0] -= 5;
                 var br = rec.node().getBBox();
+                console.log(tl);
                 //compare to 0, graphs.width, and graphs.height
                 if(0 > tl[0]){
                   tl[0] = 0;//just shift it into frame
@@ -486,11 +487,12 @@ window.exports.viewer = (function () {
                 }
                 if(0 > tl[1]){
                   tl[1] = 0;
-                } else if(graphs.width < tl[1]+br.height){
+                } else if(graphs.height < tl[1]+br.height){
                   var diff = tl[1]+br.height - graphs.height;
                   tl[1] -= diff;
                 }
                 tl[0] += 5;
+                console.log(tl);
                 t.attr("transform", "translate("+tl+")");
               }
             }
