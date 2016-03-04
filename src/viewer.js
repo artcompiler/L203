@@ -481,14 +481,14 @@ window.exports.viewer = (function () {
               var tl = [0, 0];
               var br = rec.node().getBBox();
               if(m[0] > graphs.width/2){//it's on the right, put it mouseX from the right
-                tl[0] = -graphs.width + br.width + m[0] + 100;
+                tl[0] = -br.width + m[0] - 50;
               } else {//it's on the left, put it mouseX from the left
-                tl[0] = m[0] + 100;
+                tl[0] = m[0] + 50;
               }
               if(m[1] > graphs.height/2){//it's on the bottom half, put it mouseY from the bottom
-                tl[1] = -graphs.height + br.height + m[1];
+                tl[1] = -br.height + m[1] + 50;
               } else {//it's on the top half, put it mouseY from the top
-                tl[1] = m[1];
+                tl[1] = m[1] - 50;
               }
               //compare to 0, graphs.width, and graphs.height
               if(0 > tl[0]){
