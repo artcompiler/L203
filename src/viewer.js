@@ -157,6 +157,10 @@ window.exports.viewer = (function () {
           }
         }
       }
+      if(data.dhl){
+        tex.selectAll('.rep')
+          .attr('x', h);
+      }
       var rec = t.select("rect");
       var textwidth = tex.node().getBBox().width;
       var textheight = tex.node().getBBox().height;
@@ -418,7 +422,6 @@ window.exports.viewer = (function () {
                   }
                   var tem = tex.append('tspan')
                     .attr('class','rep')
-                    .attr('x', graphs.dhl ? 10 : 0)
                     .attr('dy', h)
                     .data([{name: key, votes: +csv[d.id][key]}])
                     .attr("alignment-baseline", "before-edge");
@@ -451,6 +454,8 @@ window.exports.viewer = (function () {
               }
               if(graphs.dhl){//after the sorter so we don't have to deal with moving these around.
                 //thanks to h1 and h, we should be able to figure out how to position these.
+                tex.selectAll('.rep')
+                  .attr('x', h);
                 t.selectAll('rect.legend')
                   .remove();
                 var r = tex.selectAll('.rep');
@@ -458,9 +463,9 @@ window.exports.viewer = (function () {
                   if(graphs.dhl[element.name]){
                     t.append('rect')
                       .attr('class', 'legend')
-                      .attr('y', h1+h*index + h/2 - 5/2)
-                      .attr('height', 5)
-                      .attr('width', 5)
+                      .attr('y', h1+h*index + 3)
+                      .attr('height', h-4)
+                      .attr('width', h-4)
                       .attr('fill', "rgb(" + graphs.dhl[element.name].r + "," + graphs.dhl[element.name].g + "," + graphs.dhl[element.name].b + ")");
                   }
                 });
