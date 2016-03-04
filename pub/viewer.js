@@ -482,10 +482,9 @@ window.exports.viewer = (function () {
         if (csv) {
           var t = g.select('g.tooltip');
           t.style("visibility", "visible");
-          if (!graphs.info.position) {
-            //it should already be in position otherwise
-            t.attr("transform", "translate(" + path.centroid(d) + ")");
-          }
+          /*if(!graphs.info.position){//it should already be in position otherwise
+            t.attr("transform", "translate("+path.centroid(d)+")");
+          }*/
           t.selectAll("text").remove();
           var tex = t.append("text").attr('fill', function (d) {
             var col = graphs.info['font-color'] || graphs.info['color'] || graphs.info['fill'] || { r: 0, g: 0, b: 0 };
@@ -553,10 +552,23 @@ window.exports.viewer = (function () {
             //check each corner
             //top left is path.centroid(d) with x - 5
             //other corners are found by adding bbox.width or bbox.height to top left
-            var tl = path.centroid(d);
-            tl[0] -= 5;
+            var m = d3.mouse(window.exports.ReactDOM.findDOMNode(this)); //gets the position relative to the map, which is what we need.
+            var tl = [0, 0];
             var br = rec.node().getBBox();
-            console.log(tl);
+            if (m[0] > graphs.width / 2) {
+              //it's on the right, put it mouseX from the right
+              tl[0] = -graphs.width + br.width + m[0] + 100;
+            } else {
+              //it's on the left, put it mouseX from the left
+              tl[0] = m[0] + 100;
+            }
+            if (m[1] > graphs.height / 2) {
+              //it's on the bottom half, put it mouseY from the bottom
+              tl[1] = -graphs.height + br.height + m[1];
+            } else {
+              //it's on the top half, put it mouseY from the top
+              tl[1] = m[1];
+            }
             //compare to 0, graphs.width, and graphs.height
             if (0 > tl[0]) {
               tl[0] = 0; //just shift it into frame
@@ -572,7 +584,6 @@ window.exports.viewer = (function () {
               tl[1] -= diff;
             }
             tl[0] += 5;
-            console.log(tl);
             t.attr("transform", "translate(" + tl + ")");
           }
         }
@@ -684,7 +695,7 @@ window.exports.viewer = (function () {
             });
           }
         }
-        return React.createElement("svg", { width: data.width, height: data.height, style: { backgroundColor: "rgb(" + data.mapstyle.background.r + "," + data.mapstyle.background.g + "," + data.mapstyle.background.b + ")" } });
+        return React.createElement("svg", { width: data.width, height: data.height, style: { backgroundColor: "rgba(" + data.mapstyle.background.r + "," + data.mapstyle.background.g + "," + data.mapstyle.background.b + "," + (data.mapstyle.background.a ? data.mapstyle.background.a : 0) + ")" } });
       } else {
         return React.createElement(
           "div",

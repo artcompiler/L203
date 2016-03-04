@@ -724,7 +724,7 @@ let translate = (function() {
       mapstyle: {
         color: [{r: 0, g: 0, b: 0}],
         opacity: 1,
-        background: {r: 255, g: 255, b: 255},
+        background: {r: 255, g: 255, b: 255, a: 0},
       },
       borders: {
         color: {r: 255, g: 255, b: 255, a: 100},
