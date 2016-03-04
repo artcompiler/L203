@@ -549,43 +549,45 @@ window.exports.viewer = (function () {
             //in the tooltip case the size can change
             var rec = t.select("rect");
             rec.attr("height", tex.node().getBBox().height + 5).attr("width", tex.node().getBBox().width + 10).attr("x", -5).attr("stroke", 'grey');
-            //check each corner
-            //top left is path.centroid(d) with x - 5
-            //other corners are found by adding bbox.width or bbox.height to top left
-            var m = d3.mouse(window.exports.ReactDOM.findDOMNode(this)); //gets the position relative to the map, which is what we need.
-            var tl = [0, 0];
-            var br = rec.node().getBBox();
-            if (m[0] > graphs.width / 2) {
-              //it's on the right, put it mouseX from the right
-              tl[0] = -graphs.width + br.width + m[0] + 100;
-            } else {
-              //it's on the left, put it mouseX from the left
-              tl[0] = m[0] + 100;
-            }
-            if (m[1] > graphs.height / 2) {
-              //it's on the bottom half, put it mouseY from the bottom
-              tl[1] = -graphs.height + br.height + m[1];
-            } else {
-              //it's on the top half, put it mouseY from the top
-              tl[1] = m[1];
-            }
-            //compare to 0, graphs.width, and graphs.height
-            if (0 > tl[0]) {
-              tl[0] = 0; //just shift it into frame
-            } else if (graphs.width < tl[0] + br.width) {
-                //calculate the new location
-                var diff = tl[0] + br.width - graphs.width; //how far the far edge is off the map
-                tl[0] -= diff;
-              }
-            if (0 > tl[1]) {
-              tl[1] = 0;
-            } else if (graphs.height < tl[1] + br.height) {
-              var diff = tl[1] + br.height - graphs.height;
-              tl[1] -= diff;
-            }
-            tl[0] += 5;
-            t.attr("transform", "translate(" + tl + ")");
           }
+        }
+      }).on("mousemove", function (d, i) {
+        var t = g.select('g.tooltip');
+        if (t[0][0] && !graphs.info.position) {
+          var rec = t.select("rect");
+          var m = d3.mouse(window.exports.ReactDOM.findDOMNode(this)); //gets the position relative to the map, which is what we need.
+          var tl = [0, 0];
+          var br = rec.node().getBBox();
+          if (m[0] > graphs.width / 2) {
+            //it's on the right, put it mouseX from the right
+            tl[0] = -graphs.width + br.width + m[0] + 100;
+          } else {
+            //it's on the left, put it mouseX from the left
+            tl[0] = m[0] + 100;
+          }
+          if (m[1] > graphs.height / 2) {
+            //it's on the bottom half, put it mouseY from the bottom
+            tl[1] = -graphs.height + br.height + m[1];
+          } else {
+            //it's on the top half, put it mouseY from the top
+            tl[1] = m[1];
+          }
+          //compare to 0, graphs.width, and graphs.height
+          if (0 > tl[0]) {
+            tl[0] = 0; //just shift it into frame
+          } else if (graphs.width < tl[0] + br.width) {
+              //calculate the new location
+              var diff = tl[0] + br.width - graphs.width; //how far the far edge is off the map
+              tl[0] -= diff;
+            }
+          if (0 > tl[1]) {
+            tl[1] = 0;
+          } else if (graphs.height < tl[1] + br.height) {
+            var diff = tl[1] + br.height - graphs.height;
+            tl[1] -= diff;
+          }
+          tl[0] += 5;
+          t.attr("transform", "translate(" + tl + ")");
         }
       }).on("mouseout", function (d, i) {
         var t = g.select('g.tooltip');
