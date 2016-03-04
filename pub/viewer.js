@@ -244,58 +244,57 @@ window.exports.viewer = (function () {
         }
         return "rgba(" + col.r + "," + col.g + "," + col.b + "," + col.a + ")";
       });
-      if (data.info.position) {
-        //not a tooltip
-        var largest = [0, 0];
-        Object.keys(csv).forEach(function (id) {
-          //for each ID location
-          Object.keys(csv[id]).forEach(function (element) {
-            //for each element in that ID location
-            if (element === "county_name") {
-              if (csv[id][element].length > largest[1]) {
-                //if it's larger replace
-                largest[0] = id;
-                largest[1] = csv[id][element].length;
-              }
-            } else {
-              var str = element + ': ' + csv[id][element];
-              if (str.length > largest[1]) {
-                largest[0] = id;
-                largest[1] = str.length;
-              }
+      var largest = [0, 0];
+      Object.keys(csv).forEach(function (id) {
+        //for each ID location
+        Object.keys(csv[id]).forEach(function (element) {
+          //for each element in that ID location
+          if (element === "county_name") {
+            if (csv[id][element].length > largest[1]) {
+              //if it's larger replace
+              largest[0] = id;
+              largest[1] = csv[id][element].length;
             }
-          });
-        }); //we know which one has the highest width now (largest[0])
-        var id = largest[0];
-        var tex = t.append("text").attr('fill', function (d) {
-          return "rgba(255,255,255,0)";
-        }).style('font-family', data.info['font-family'] || 'auto').style('font-weight', data.info['font-weight'] || 'normal').style('font-size', data.info['font-size'] || 16 + 'px').style('font-style', data.info['font-style'] || 'normal').style('text-decoration', data.info['text-decoration'] || 'none');
-        var titlet = tex.append('tspan').text(csv[id].county_name).attr("alignment-baseline", "before-edge");
-        if (data.info.title) {
-          titlet.style('font-family', data.info.title['font-family'] || data.info['font-family'] || 'auto').style('font-weight', data.info.title['font-weight'] || data.info['font-weight'] || 'normal').style('font-size', data.info.title['font-size'] || data.info['font-size'] || 16 + 'px').style('font-style', data.info.title['font-style'] || data.info['font-style'] || 'normal').style('text-decoration', data.info.title['text-decoration'] || data.info['text-decoration'] || 'none');
-        }
-        var h = titlet.node().getBBox().height;
-        var h1 = titlet.node().getBBox().height;
-        for (var key in csv[id]) {
-          if (key !== 'county_name' && Object.prototype.hasOwnProperty.call(csv[id], key)) {
-            if (tem && h === h1) {
-              h = tem.node().getBBox().height - (h + 2);
-            }
-            var tem = tex.append('tspan').attr('class', 'rep').attr('x', 0).attr('dy', h).data([{ name: key, votes: +csv[id][key] }]).attr("alignment-baseline", "before-edge");
-            if (key === 'repnopref') {
-              tem.text('No Preference: ' + csv[id][key]);
-            } else if (key === 'repother') {
-              tem.text('Other: ' + csv[id][key]);
-            } else {
-              tem.text(key.charAt(0).toUpperCase() + key.slice(1) + ': ' + csv[id][key]);
+          } else {
+            var str = element + ': ' + csv[id][element];
+            if (str.length > largest[1]) {
+              largest[0] = id;
+              largest[1] = str.length;
             }
           }
+        });
+      }); //we know which one has the highest width now (largest[0])
+      var id = largest[0];
+      var tex = t.append("text").attr('fill', function (d) {
+        return "rgba(255,255,255,0)";
+      }).style('font-family', data.info['font-family'] || 'auto').style('font-weight', data.info['font-weight'] || 'normal').style('font-size', data.info['font-size'] || 16 + 'px').style('font-style', data.info['font-style'] || 'normal').style('text-decoration', data.info['text-decoration'] || 'none');
+      var titlet = tex.append('tspan').text(csv[id].county_name).attr("alignment-baseline", "before-edge");
+      if (data.info.title) {
+        titlet.style('font-family', data.info.title['font-family'] || data.info['font-family'] || 'auto').style('font-weight', data.info.title['font-weight'] || data.info['font-weight'] || 'normal').style('font-size', data.info.title['font-size'] || data.info['font-size'] || 16 + 'px').style('font-style', data.info.title['font-style'] || data.info['font-style'] || 'normal').style('text-decoration', data.info.title['text-decoration'] || data.info['text-decoration'] || 'none');
+      }
+      var h = titlet.node().getBBox().height;
+      var h1 = titlet.node().getBBox().height;
+      for (var key in csv[id]) {
+        if (key !== 'county_name' && Object.prototype.hasOwnProperty.call(csv[id], key)) {
+          if (tem && h === h1) {
+            h = tem.node().getBBox().height - (h + 2);
+          }
+          var tem = tex.append('tspan').attr('class', 'rep').attr('x', 0).attr('dy', h).data([{ name: key, votes: +csv[id][key] }]).attr("alignment-baseline", "before-edge");
+          if (key === 'repnopref') {
+            tem.text('No Preference: ' + csv[id][key]);
+          } else if (key === 'repother') {
+            tem.text('Other: ' + csv[id][key]);
+          } else {
+            tem.text(key.charAt(0).toUpperCase() + key.slice(1) + ': ' + csv[id][key]);
+          }
         }
-        var rec = t.select("rect");
-        var textwidth = tex.node().getBBox().width;
-        var textheight = tex.node().getBBox().height;
-        //set the new height and width only in svg; height and width keep being used for the map
-        //if it's on the top or left the map needs to be pushed over.
+      }
+      var rec = t.select("rect");
+      var textwidth = tex.node().getBBox().width;
+      var textheight = tex.node().getBBox().height;
+      //set the new height and width only in svg; height and width keep being used for the map
+      //if it's on the top or left the map needs to be pushed over.
+      if (data.info.position) {
         if (data.info.position < 3) {
           //top or bottom
           svgd.attr("height", data.height + textheight + 5);
@@ -319,8 +318,10 @@ window.exports.viewer = (function () {
             t.attr("transform", "translate(" + [data.width, (data.height - (textheight + 5)) / 2] + ")");
           }
         }
-        rec.attr("height", textheight + 5).attr("width", textwidth + 10).attr("x", -5).attr("stroke", 'grey');
+      } else {
+        t.style("visibility", "hidden");
       }
+      rec.attr("height", textheight + 5).attr("width", textwidth + 10).attr("x", -5).attr("stroke", 'grey');
     },
 
     projection: function projection(_projection) {
@@ -544,11 +545,6 @@ window.exports.viewer = (function () {
                 t.append('rect').attr('class', 'legend').attr('y', h1 + h * index + h / 2 - 5 / 2).attr('height', 5).attr('width', 5).attr('fill', "rgb(" + graphs.dhl[element.name].r + "," + graphs.dhl[element.name].g + "," + graphs.dhl[element.name].b + ")");
               }
             });
-          }
-          if (!graphs.info.position) {
-            //in the tooltip case the size can change
-            var rec = t.select("rect");
-            rec.attr("height", tex.node().getBBox().height + 5).attr("width", tex.node().getBBox().width + 10).attr("x", -5).attr("stroke", 'grey');
           }
         }
       }).on("mousemove", function (d, i) {
