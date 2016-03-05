@@ -379,9 +379,6 @@ window.exports.viewer = (function () {
             if(csv){
               var t = g.select('g.tooltip');
               t.style("visibility", "visible");
-              /*if(!graphs.info.position){//it should already be in position otherwise
-                t.attr("transform", "translate("+path.centroid(d)+")");
-              }*/
               t.selectAll("text")
                 .remove();
               var tex = t.append("text")
@@ -423,6 +420,7 @@ window.exports.viewer = (function () {
                   var tem = tex.append('tspan')
                     .attr('class','rep')
                     .attr('dy', h)
+                    .attr('x', 0)
                     .data([{name: key, votes: +csv[d.id][key]}])
                     .attr("alignment-baseline", "before-edge");
                   if(key === 'repnopref'){

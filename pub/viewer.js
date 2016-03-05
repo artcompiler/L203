@@ -486,9 +486,6 @@ window.exports.viewer = (function () {
         if (csv) {
           var t = g.select('g.tooltip');
           t.style("visibility", "visible");
-          /*if(!graphs.info.position){//it should already be in position otherwise
-            t.attr("transform", "translate("+path.centroid(d)+")");
-          }*/
           t.selectAll("text").remove();
           var tex = t.append("text").attr('fill', function (d) {
             var col = graphs.info['font-color'] || graphs.info['color'] || graphs.info['fill'] || { r: 0, g: 0, b: 0 };
@@ -512,7 +509,7 @@ window.exports.viewer = (function () {
               if (tem && h === h1) {
                 h = tem.node().getBBox().height - (h + 2);
               }
-              var tem = tex.append('tspan').attr('class', 'rep').attr('dy', h).data([{ name: key, votes: +csv[d.id][key] }]).attr("alignment-baseline", "before-edge");
+              var tem = tex.append('tspan').attr('class', 'rep').attr('dy', h).attr('x', 0).data([{ name: key, votes: +csv[d.id][key] }]).attr("alignment-baseline", "before-edge");
               if (key === 'repnopref') {
                 tem.text('No Preference: ' + csv[d.id][key]);
               } else if (key === 'repother') {
