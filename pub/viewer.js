@@ -467,6 +467,7 @@ window.exports.viewer = (function () {
         if (isNaN(tt.a)) {
           tt.a = graphs.mapstyle.opacity;
         }
+        d['color'] = "rgba(" + tt.r + "," + tt.g + "," + tt.b + "," + tt.a + ")";
         return "rgba(" + tt.r + "," + tt.g + "," + tt.b + "," + tt.a + ")";
       }).style("stroke", "rgba(" + graphs.borders.color.r + "," + graphs.borders.color.g + "," + graphs.borders.color.b + "," + graphs.borders.color.a + ")").style("stroke-width", graphs.borders.thickness || 0.5).attr("d", path).on("click", function (d, i) {
         if (graphs.chl.length) {
@@ -483,6 +484,8 @@ window.exports.viewer = (function () {
           });
         }
       }).on("mouseover", function (d, i) {
+        var fl = d3.rgb(d3.select(this).style('fill'));
+        d3.select(this).style('fill', fl.brighter(1));
         if (csv) {
           var t = g.select('g.tooltip');
           t.style("visibility", "visible");
@@ -587,6 +590,9 @@ window.exports.viewer = (function () {
           t.attr("transform", "translate(" + tl + ")");
         }
       }).on("mouseout", function (d, i) {
+        d3.select(this).style("fill", function (d, i) {
+          return d.color;
+        });
         var t = g.select('g.tooltip');
         if (t[0][0] && !graphs.info.position) {
           t.style("visibility", "hidden");
