@@ -1046,7 +1046,8 @@ let translate = (function() {
       if(!colors[val]){
         err = err.concat(error("Unrecognized color, please use lower case.", node.elts[0]));
       } else {
-        ret = (colorbrewer[colors[val]][9]).reverse();
+        ret = colorbrewer[colors[val]][9].slice(0);
+        ret.push(ret.shift());
       }
       resume([].concat(err), ret);//finds the right name and then grabs the colorbrewer array
     });
