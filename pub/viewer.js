@@ -229,13 +229,13 @@ window.exports.viewer = (function () {
         if (data.zoom) {
           this.zoom(data.zoom, svgd, g);
         }
-        if (data.map && (!prevdata || prevdata.map !== data.map)) {
+        if (data.map && (!prevdata || prevdata.map !== data.map || g.selectAll('g.land').empty())) {
           g.selectAll("g.land").remove();
           var self = this;
           d3.json(data.map, function (error, json) {
             self.draw(error, json, g, data, path, projection, csv);
           });
-        } else if (data.tree && (!prevdata || prevdata.tree !== data.tree)) {
+        } else if (data.tree && (!prevdata || prevdata.tree !== data.tree || g.selectAll('g.land').empty())) {
           g.selectAll("g.land").remove();
           var parsedmap = JSON.parse(data.tree);
           this.draw(parsedmap.error, parsedmap, g, data, path, projection, csv);
@@ -466,6 +466,7 @@ window.exports.viewer = (function () {
             return i;
           }
         }).enter().append("path");
+        var mapp = g.select("g.land");
       }
 
       mapp.selectAll("path").style("fill", function (d, i) {
