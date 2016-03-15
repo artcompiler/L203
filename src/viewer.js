@@ -129,51 +129,11 @@ window.exports.viewer = (function () {
         });
       });//we know which one has the highest width now (largest[0])
       var id = largest[0];
-      var tex = t.append("text")
-        .attr('fill', function (d) {
-          return "rgba(255,255,255,0)";
-        })
-        .style('font-family', data.info['font-family'] || 'auto')
-        .style('font-weight', data.info['font-weight'] || 'normal')
-        .style('font-size', data.info['font-size'] || 16+'px')
-        .style('font-style', data.info['font-style'] || 'normal')
-        .style('text-decoration', data.info['text-decoration'] || 'none');
-      var titlet = tex.append('tspan')
-        .text(csv[id].county_name)
-        .attr("alignment-baseline", "before-edge");
-      if(data.info.title){
-        titlet
-          .style('font-family', data.info.title['font-family'] || data.info['font-family'] || 'auto')
-          .style('font-weight', data.info.title['font-weight'] || data.info['font-weight'] || 'normal')
-          .style('font-size', data.info.title['font-size'] || data.info['font-size'] || 16+'px')
-          .style('font-style', data.info.title['font-style'] || data.info['font-style'] || 'normal')
-          .style('text-decoration', data.info.title['text-decoration'] || data.info['text-decoration'] || 'none');
-      }
-      var h = titlet.node().getBBox().height;
-      var h1 = titlet.node().getBBox().height;
-      for (var key in csv[id]){
-        if(key !== 'county_name' && Object.prototype.hasOwnProperty.call(csv[id], key)){
-          if(tem && h === h1){
-            h = tem.node().getBBox().height - (h + 2);
-          }
-          var tem = tex.append('tspan')
-            .attr('class','rep')
-            .attr('x', 0)
-            .attr('dy', h)
-            .data([{name: key, votes: +csv[id][key]}])
-            .attr("alignment-baseline", "before-edge");
-          if(key === 'repnopref'){
-            tem.text('No Preference: ' + csv[id][key]);
-          } else if (key === 'repother'){
-            tem.text('Other: ' + csv[id][key]);
-          } else {
-            tem.text(key.charAt(0).toUpperCase() + key.slice(1) + ': ' + csv[id][key]);
-          }
-        }
-      }
+      var h = this.tooltip(t, data.info, csv[id]);
+      var tex = t.select("text");
       if(data.dhl){
         tex.selectAll('.rep')
-          .attr('x', h);
+          .attr('x', h[0]);
       }
       var rec = t.select("rect");
       var textwidth = tex.node().getBBox().width;
@@ -318,6 +278,61 @@ window.exports.viewer = (function () {
       svgd.call(zoom).call(zoom.event);
     },
 
+    tooltip: function(t, info, csv){
+      var tex = t.append("text")
+        .attr('fill', function (d) {
+          var col = info['font-color'] || info['color'] || info['fill'] || {r: 0, g: 0, b: 0};
+          return "rgb(" + col.r + "," + col.g + "," + col.b + ")";
+        })
+        .style('font-family', info['font-family'] || 'auto')
+        .style('font-weight', info['font-weight'] || 'normal')
+        .style('font-size', info['font-size'] || 16+'px')
+        .style('font-style', info['font-style'] || 'normal')
+        .style('text-decoration', info['text-decoration'] || 'none');
+      var titlet = tex.append('tspan')
+        .text(csv.county_name)
+        .attr("alignment-baseline", "before-edge");
+      if(info.title){
+        titlet
+          .attr('fill', function (d) {
+            var col = info.title['font-color'] || info.title['color'] || info.title['fill'] || info['font-color'] || info['color'] || info['fill'] || {r: 0, g: 0, b: 0};
+            return "rgb(" + col.r + "," + col.g + "," + col.b + ")"; 
+          })
+          .style('font-family', info.title['font-family'] || info['font-family'] || 'auto')
+          .style('font-weight', info.title['font-weight'] || info['font-weight'] || 'normal')
+          .style('font-size', info.title['font-size'] || info['font-size'] || 16+'px')
+          .style('font-style', info.title['font-style'] || info['font-style'] || 'normal')
+          .style('text-decoration', info.title['text-decoration'] || info['text-decoration'] || 'none');
+      }
+      //first is always equal to titlet.node().getBBox().height
+      //second seems to be tem height + dy
+      //so to get the real height we just subtract the previous dy
+      //so we need to get the second one, keep it, and that's it.
+      var h = titlet.node().getBBox().height;
+      var h1 = titlet.node().getBBox().height;
+      for (var key in csv){//the csv already has the ID
+        if(key !== 'county_name' && Object.prototype.hasOwnProperty.call(csv, key)){
+          if(tem && h === h1){
+            h = tem.node().getBBox().height - (h + 2);
+          }
+          var tem = tex.append('tspan')
+            .attr('class','rep')
+            .attr('dy', h)
+            .attr('x', 0)
+            .data([{name: key, votes: +csv[key]}])
+            .attr("alignment-baseline", "before-edge");
+          if(key === 'repnopref'){
+            tem.text('No Preference: ' + csv[key]);
+          } else if (key === 'repother'){
+            tem.text('Other: ' + csv[key]);
+          } else {
+            tem.text(key.charAt(0).toUpperCase() + key.slice(1) + ': ' + csv[key]);
+          }
+        }
+      }
+      return [h, h1];
+    },
+
     draw: function(error, world, g, graphs, path, projection, csv){
       if (error && error.length > 0) return error;
       if(world){
@@ -397,69 +412,16 @@ window.exports.viewer = (function () {
               }
             });
           }
-        })
-        .on("mouseover", function (d, i){
-          var fl = d3.rgb(d3.select(this).style('fill'));
-          d3.select(this).style('fill', fl.brighter(1));
           if(csv){
             var t = g.select('g.tooltip');
             t.style("visibility", "visible");
             t.selectAll("text")
               .remove();
-            var tex = t.append("text")
-              .attr('fill', function (d) {
-                var col = graphs.info['font-color'] || graphs.info['color'] || graphs.info['fill'] || {r: 0, g: 0, b: 0};
-                return "rgb(" + col.r + "," + col.g + "," + col.b + ")";
-              })
-              .style('font-family', graphs.info['font-family'] || 'auto')
-              .style('font-weight', graphs.info['font-weight'] || 'normal')
-              .style('font-size', graphs.info['font-size'] || 16+'px')
-              .style('font-style', graphs.info['font-style'] || 'normal')
-              .style('text-decoration', graphs.info['text-decoration'] || 'none');
-            var titlet = tex.append('tspan')
-              .text(csv[d.id].county_name)
-              .attr("alignment-baseline", "before-edge");
-            if(graphs.info.title){
-              titlet
-                .attr('fill', function (d) {
-                  var col = graphs.info.title['font-color'] || graphs.info.title['color'] || graphs.info.title['fill'] || graphs.info['font-color'] || graphs.info['color'] || graphs.info['fill'] || {r: 0, g: 0, b: 0};
-                  return "rgb(" + col.r + "," + col.g + "," + col.b + ")"; 
-                })
-                .style('font-family', graphs.info.title['font-family'] || graphs.info['font-family'] || 'auto')
-                .style('font-weight', graphs.info.title['font-weight'] || graphs.info['font-weight'] || 'normal')
-                .style('font-size', graphs.info.title['font-size'] || graphs.info['font-size'] || 16+'px')
-                .style('font-style', graphs.info.title['font-style'] || graphs.info['font-style'] || 'normal')
-                .style('text-decoration', graphs.info.title['text-decoration'] || graphs.info['text-decoration'] || 'none');
-            }
-            //first is always equal to titlet.node().getBBox().height
-            //second seems to be tem height + dy
-            //so to get the real height we just subtract the previous dy
-            //so we need to get the second one, keep it, and that's it.
-            var h = titlet.node().getBBox().height;
-            var h1 = titlet.node().getBBox().height;
-            for (var key in csv[d.id]){
-              if(key !== 'county_name' && Object.prototype.hasOwnProperty.call(csv[d.id], key)){
-                if(tem && h === h1){
-                  h = tem.node().getBBox().height - (h + 2);
-                }
-                var tem = tex.append('tspan')
-                  .attr('class','rep')
-                  .attr('dy', h)
-                  .attr('x', 0)
-                  .data([{name: key, votes: +csv[d.id][key]}])
-                  .attr("alignment-baseline", "before-edge");
-                if(key === 'repnopref'){
-                  tem.text('No Preference: ' + csv[d.id][key]);
-                } else if (key === 'repother'){
-                  tem.text('Other: ' + csv[d.id][key]);
-                } else {
-                  tem.text(key.charAt(0).toUpperCase() + key.slice(1) + ': ' + csv[d.id][key]);
-                }
-              }
-            }
+            var h = self.tooltip(t, graphs.info, csv[d.id]);
+            var tex = t.select("text");
             if(graphs.info.sorter){
               tex.selectAll('.rep')
-                .attr('dy', h)
+                .attr('dy', h[0])
                 .sort(function (a, b){
                   if(isNaN(a[graphs.info.sorter])){
                     var s = b[graphs.info.sorter].localeCompare(a[graphs.info.sorter]);
@@ -473,12 +435,12 @@ window.exports.viewer = (function () {
                   }
                 });
               tex.select('.rep')
-                .attr('dy', h1);//this should be the first one.
+                .attr('dy', h[1]);//this should be the first one.
             }
             if(graphs.dhl){//after the sorter so we don't have to deal with moving these around.
               //thanks to h1 and h, we should be able to figure out how to position these.
               tex.selectAll('.rep')
-                .attr('x', h);
+                .attr('x', h[0]);
               t.selectAll('rect.legend')
                 .remove();
               var r = tex.selectAll('.rep');
@@ -486,9 +448,57 @@ window.exports.viewer = (function () {
                 if(graphs.dhl[element.name]){
                   t.append('rect')
                     .attr('class', 'legend')
-                    .attr('y', h1+h*index + 3)
-                    .attr('height', h-4)
-                    .attr('width', h-4)
+                    .attr('y', h[1]+h[0]*index + 3)
+                    .attr('height', h[0]-4)
+                    .attr('width', h[0]-4)
+                    .attr('fill', "rgb(" + graphs.dhl[element.name].r + "," + graphs.dhl[element.name].g + "," + graphs.dhl[element.name].b + ")");
+                }
+              });
+            }
+          }
+        })
+        .on("mouseover", function (d, i){
+          var fl = d3.rgb(d3.select(this).style('fill'));
+          d3.select(this).style('fill', fl.brighter(1));
+          if(csv){
+            var t = g.select('g.tooltip');
+            t.style("visibility", "visible");
+            t.selectAll("text")
+              .remove();
+            var h = self.tooltip(t, graphs.info, csv[d.id]);
+            var tex = t.select("text");
+            if(graphs.info.sorter){
+              tex.selectAll('.rep')
+                .attr('dy', h[0])
+                .sort(function (a, b){
+                  if(isNaN(a[graphs.info.sorter])){
+                    var s = b[graphs.info.sorter].localeCompare(a[graphs.info.sorter]);
+                  } else {
+                    var s = b[graphs.info.sorter] - a[graphs.info.sorter];
+                  }
+                  if(graphs.info.order){
+                    return (-1)*s;
+                  } else {
+                    return s;
+                  }
+                });
+              tex.select('.rep')
+                .attr('dy', h[1]);//this should be the first one.
+            }
+            if(graphs.dhl){//after the sorter so we don't have to deal with moving these around.
+              //thanks to h1 and h, we should be able to figure out how to position these.
+              tex.selectAll('.rep')
+                .attr('x', h[0]);
+              t.selectAll('rect.legend')
+                .remove();
+              var r = tex.selectAll('.rep');
+              r.data().forEach(function (element, index){//elements have .name and .votes
+                if(graphs.dhl[element.name]){
+                  t.append('rect')
+                    .attr('class', 'legend')
+                    .attr('y', h[1]+h[0]*index + 3)
+                    .attr('height', h[0]-4)
+                    .attr('width', h[0]-4)
                     .attr('fill', "rgb(" + graphs.dhl[element.name].r + "," + graphs.dhl[element.name].g + "," + graphs.dhl[element.name].b + ")");
                 }
               });
