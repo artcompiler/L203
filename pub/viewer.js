@@ -555,7 +555,7 @@ window.exports.viewer = (function () {
             });
           }
         }
-      }).on("mouseove", function (d, i) {
+      }).on("mouseover", function (d, i) {
         var fl = d3.rgb(d3.select(this).style('fill'));
         d3.select(this).style('fill', fl.brighter(1));
         if (csv) {
