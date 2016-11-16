@@ -20,13 +20,13 @@ var _reactfauxdom = require("react-faux-dom");
 
 var ReactFauxDOM = _interopRequireWildcard(_reactfauxdom);
 
-window.exports.viewer = (function () {
+window.gcexports.viewer = (function () {
   var Map = React.createClass({
     componentDidMount: function() {
     },
 
     componentDidUpdate: function(prevProps) {
-      var svgd = d3.select(window.exports.ReactDOM.findDOMNode(this));
+      var svgd = d3.select(window.gcexports.ReactDOM.findDOMNode(this));
       var data = this.props.data ? this.props.data[0] : null;
       var prevdata = prevProps.data ? prevProps.data[0] : null;
       if(data){
@@ -509,7 +509,7 @@ window.exports.viewer = (function () {
           var t = g.select('g.tooltip');
           if(t[0][0] && !graphs.info.position){
             var rec = t.select("rect");
-            var m = d3.mouse(window.exports.ReactDOM.findDOMNode(this));//gets the position relative to the map, which is what we need.
+            var m = d3.mouse(window.gcexports.ReactDOM.findDOMNode(this));//gets the position relative to the map, which is what we need.
             var tl = [0, 0];
             var br = rec.node().getBBox();
             if(m[0] > graphs.width/2){//it's on the right, put it mouseX from the right
